@@ -6,6 +6,7 @@ from typing import Any
 
 from .agents import AgentSpec, coordinator_spec, specialist_specs
 from .config import TravelBuddySettings
+from .executors import ContextPreservingAgentExecutor
 from .integrations import (
     ProviderFactory,
     ToolFactory,
@@ -16,6 +17,7 @@ from .integrations import (
 AgentFactory = Callable[..., Any]
 ClientFactory = Callable[[str], Any]
 GroupChatFactory = Callable[..., Any]
+ExecutorFactory = Callable[[Any], Any]
 
 
 @dataclass(frozen=True)
@@ -73,6 +75,7 @@ def build_travel_buddy(
     agent_factory: AgentFactory | None = None,
     client_factory: ClientFactory | None = None,
     group_chat_factory: GroupChatFactory | None = None,
+    executor_factory: ExecutorFactory = ContextPreservingAgentExecutor,
     mcp_tool_factory: ToolFactory = build_mcp_tool,
     grounding_provider_factory: ProviderFactory | None = None,
 ) -> BuiltTravelBuddy:
@@ -102,10 +105,12 @@ def build_travel_buddy(
         )
         for spec in specialist_specs(mcp_tool=mcp_tool, grounding_provider=grounding_provider)
     )
+    specialist_executors = [executor_factory(agent) for agent in specialists]
     workflow = group_chat_factory(
-        participants=list(specialists),
-        intermediate_output_from=list(specialists),
+        participants=specialist_executors,
+        intermediate_output_from=specialist_executors,
         orchestrator_agent=coordinator,
+        max_rounds=8,
     ).build()
     hosted_agent = workflow.as_agent(name="TravelBuddy")
     return BuiltTravelBuddy(
