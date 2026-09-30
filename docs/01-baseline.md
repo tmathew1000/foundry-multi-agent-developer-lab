@@ -108,8 +108,16 @@ curl --request POST http://127.0.0.1:8088/responses \
   --data '{"input":"Plan a three-day trip to Tokyo."}'
 ```
 
-You can also connect the Foundry Agent Inspector to
-`http://127.0.0.1:8088` and send:
+To use Foundry Agent Inspector instead:
+
+1. Confirm that the Foundry Toolkit extension is installed in VS Code.
+2. Leave `python main.py` running.
+3. Press `Ctrl+Shift+P` to open the Command Palette.
+4. Run `Foundry Toolkit: Open Agent Inspector`. In older extension versions,
+   run `AI Toolkit: Open Test Tool`.
+5. Connect the inspector to port `8088`, or enter
+   `http://127.0.0.1:8088` if it requests a server URL.
+6. Send:
 
 ```text
 Plan a three-day trip to Tokyo.
