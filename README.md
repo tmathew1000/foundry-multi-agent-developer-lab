@@ -19,6 +19,8 @@ Microsoft Foundry. You will add function and MCP tools, ground recommendations
 with destination content, deploy the workflow as a hosted agent, inspect its
 distributed traces, and compare evaluation results after an improvement.
 
+[![Validate lab](https://github.com/tmathew1000/foundry-multi-agent-developer-lab/actions/workflows/validate.yml/badge.svg)](https://github.com/tmathew1000/foundry-multi-agent-developer-lab/actions/workflows/validate.yml)
+
 > [!IMPORTANT]
 > This is a four-hour self-paced lab. Follow the required path in order. Optional
 > challenges do not block later modules.
