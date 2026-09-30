@@ -82,8 +82,34 @@ Start the local host:
 python main.py
 ```
 
-Use the invocation command printed by the server or the Foundry Agent Inspector
-to send:
+Leave that terminal running. When the server reports that it is listening on
+port `8088`, open a second PowerShell terminal and invoke the Responses
+endpoint:
+
+```powershell
+$body = @{
+    input = "Plan a three-day trip to Tokyo."
+} | ConvertTo-Json
+
+$response = Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8088/responses" `
+    -Method Post `
+    -ContentType "application/json" `
+    -Body $body
+
+$response.output.content.text
+```
+
+On macOS or Linux, use `curl` from a second terminal:
+
+```bash
+curl --request POST http://127.0.0.1:8088/responses \
+  --header "Content-Type: application/json" \
+  --data '{"input":"Plan a three-day trip to Tokyo."}'
+```
+
+You can also connect the Foundry Agent Inspector to
+`http://127.0.0.1:8088` and send:
 
 ```text
 Plan a three-day trip to Tokyo.
