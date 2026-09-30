@@ -47,7 +47,7 @@ class PreflightTests(unittest.TestCase):
             {
                 "AZURE_AI_PROJECT_ENDPOINT": "https://example.test/projects/lab",
                 "AZURE_AI_MODEL_DEPLOYMENT_NAME": "travel-model",
-                "TRAVEL_BUDDY_MCP_URL": "https://mcp.example.test/mcp",
+                "SERVICE_MCP_SERVER_URI": "https://mcp.example.test",
             }
         )
 

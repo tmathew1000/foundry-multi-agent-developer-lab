@@ -142,8 +142,11 @@ python scripts/verify_module.py 0
 Expected result:
 
 ```text
-PASS Module 0: local tools and Azure context are ready
+PASS Module 0: local tools and deployed Azure context are ready
 ```
+
+This verification reads the active `azd` environment and requires the Foundry
+project endpoint, model deployment, and remote MCP endpoint.
 
 ## Troubleshooting
 

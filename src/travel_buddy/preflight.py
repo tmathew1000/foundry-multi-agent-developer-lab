@@ -92,7 +92,7 @@ def post_provision_checks(values: Mapping[str, str]) -> list[PreflightCheck]:
         "AZURE_AIPROJECT_ENDPOINT",
     )
     model = _first_value(values, "AZURE_AI_MODEL_DEPLOYMENT_NAME")
-    mcp_url = _first_value(values, "TRAVEL_BUDDY_MCP_URL")
+    mcp_url = _first_value(values, "TRAVEL_BUDDY_MCP_URL", "SERVICE_MCP_SERVER_URI")
     return [
         _url_check(
             "foundry-project-endpoint",
@@ -108,7 +108,7 @@ def post_provision_checks(values: Mapping[str, str]) -> list[PreflightCheck]:
         _url_check(
             "remote-mcp-url",
             mcp_url,
-            "TRAVEL_BUDDY_MCP_URL",
+            "TRAVEL_BUDDY_MCP_URL or SERVICE_MCP_SERVER_URI",
             require_remote=True,
         ),
     ]
