@@ -10,15 +10,15 @@ def configure_observability(settings: TravelBuddySettings) -> bool:
     if not connection_string:
         return False
     try:
-        from agent_framework import settings as agent_framework_settings
+        from agent_framework.observability import enable_instrumentation
         from azure.monitor.opentelemetry import configure_azure_monitor
     except ImportError as exc:
         raise RuntimeError(
             "Install azure-monitor-opentelemetry and Agent Framework to enable telemetry."
         ) from exc
 
-    agent_framework_settings.tracing_implementation = "opentelemetry"
     configure_azure_monitor(connection_string=connection_string)
+    enable_instrumentation()
     return True
 
 
