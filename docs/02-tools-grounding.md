@@ -54,7 +54,7 @@ Implement these behaviors:
 Run the focused tests:
 
 ```bash
-pytest tests/test_tools.py -q
+python -m pytest tests/test_tools.py -q
 ```
 
 Expected result:
@@ -76,7 +76,7 @@ Find the operation that returns hotel and activity information. Notice:
 Test its pure data layer:
 
 ```bash
-pytest tests/test_mcp_server.py -q
+python -m pytest tests/test_mcp_server.py -q
 ```
 
 ## Required: inspect grounding

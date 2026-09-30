@@ -55,7 +55,7 @@ Responses protocol.
 ## Required: run the offline contract tests
 
 ```bash
-pytest tests/test_config.py tests/test_workflow.py -q
+python -m pytest tests/test_config.py tests/test_workflow.py -q
 ```
 
 The tests do not call Azure. They verify the application contract and allow the
