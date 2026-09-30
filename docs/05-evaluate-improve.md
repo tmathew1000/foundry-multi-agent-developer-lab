@@ -98,7 +98,7 @@ A good change:
 Run the offline tests:
 
 ```bash
-python -m pytest tests/test_workflow.py -q
+python -m pytest tests/test_workflow.py
 ```
 
 ## Required: run and compare the candidate

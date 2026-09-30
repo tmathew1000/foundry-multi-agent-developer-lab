@@ -38,7 +38,7 @@ flowchart TB
 ## Required: run final verification
 
 ```bash
-python -m pytest -q
+python -m pytest
 python scripts/verify_module.py all
 ```
 

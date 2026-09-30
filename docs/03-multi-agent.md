@@ -72,7 +72,7 @@ Do not give it flight-specific tools.
 Run:
 
 ```bash
-python -m pytest tests/test_agents.py -q
+python -m pytest tests/test_agents.py
 ```
 
 ## Required: register the specialist
@@ -96,7 +96,7 @@ logical agents.
 Run:
 
 ```bash
-python -m pytest tests/test_workflow.py -q
+python -m pytest tests/test_workflow.py
 ```
 
 Then invoke these prompts:

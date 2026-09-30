@@ -41,7 +41,7 @@ and grounding activity.
 Run the complete local verification before deployment:
 
 ```bash
-python -m pytest -q
+python -m pytest
 python scripts/verify_module.py 3
 ```
 

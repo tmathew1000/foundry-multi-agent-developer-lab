@@ -55,7 +55,7 @@ Responses protocol.
 ## Required: run the offline contract tests
 
 ```bash
-python -m pytest tests/test_config.py tests/test_workflow.py -q
+python -m pytest tests/test_config.py tests/test_workflow.py
 ```
 
 The tests do not call Azure. They verify the application contract and allow the
@@ -64,7 +64,8 @@ lab to detect source errors before a deployment.
 Expected result:
 
 ```text
-passed
+........                                                                 [100%]
+8 passed in ...s
 ```
 
 ## Required: run the baseline
