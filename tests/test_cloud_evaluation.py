@@ -36,6 +36,18 @@ class CloudEvaluationHelperTests(unittest.TestCase):
         ):
             HostedAgentEvaluationConfig.from_env({})
 
+    def test_configuration_accepts_azd_model_deployment_metadata(self) -> None:
+        config = HostedAgentEvaluationConfig.from_env(
+            {
+                "FOUNDRY_PROJECT_ENDPOINT": "https://example.test/project",
+                "AGENT_TRAVEL_BUDDY_NAME": "travel-buddy",
+                "AGENT_TRAVEL_BUDDY_VERSION": "7",
+                "AI_PROJECT_DEPLOYMENTS": '[{"name":"travel-model"}]',
+            }
+        )
+
+        self.assertEqual("travel-model", config.judge_model)
+
     def test_data_source_targets_exact_agent_version(self) -> None:
         config = HostedAgentEvaluationConfig("endpoint", "travel-buddy", "4", "model")
         source = build_data_source([{"query": "Plan a trip"}], config)

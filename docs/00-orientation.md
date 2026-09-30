@@ -16,7 +16,8 @@ estimated_reading_time: 10
 You will validate your environment, start provisioning, and identify the
 responsibility of every major solution component.
 
-Estimated time: 15 minutes.
+Estimated time: 15 minutes of active work, plus 20 to 30 minutes for
+provisioning.
 
 ## Architecture change
 
@@ -68,14 +69,14 @@ python scripts/preflight.py
 Expected result:
 
 ```text
-PASS  Python
-PASS  Azure CLI
-PASS  Azure Developer CLI
-PASS  Azure sign-in
-PASS  Subscription state
-CAVEAT  Verify role-assignment capability
-CAVEAT  Verify model quota and Azure Policy
-READY Provisioning prerequisites passed
+[OK] python>=3.11: Python 3.11 or later
+[OK] azure-cli: <path-to-az>
+[OK] azd: <path-to-azd>
+[OK] azure-login: Signed in to tenant <tenant-id>.
+[OK] enabled-subscription: <subscription-name> (<subscription-id>)
+[CAVEAT] role-assignments: ...
+[CAVEAT] regional-quota: ...
+[CAVEAT] azure-policy: ...
 ```
 
 > [!CAUTION]
@@ -102,6 +103,11 @@ azd up
 Provisioning may take 20 to 30 minutes. Continue with the architecture review
 while the command runs. If `azd up` requires your terminal, open a second
 terminal for the next section.
+
+> [!IMPORTANT]
+> Wait for `azd up` to report that provisioning and deployment succeeded before
+> running Module 0 verification. The verification requires the deployed
+> Foundry project, `travel-model` deployment, and remote MCP endpoint.
 
 The MCP container image builds remotely in Azure. Codespaces does not require
 a local Docker or Podman installation for this deployment.
@@ -135,6 +141,8 @@ Answers:
 
 ## Verify your work
 
+Confirm that `azd up` completed successfully, then run:
+
 ```bash
 python scripts/verify_module.py 0
 ```
@@ -160,8 +168,26 @@ If `azd up` reports that `infra/main.bicep` is missing, pull the latest
 repository changes. Confirm that `azure.yaml` defines the `foundry` and `mcp`
 infrastructure layers, then rerun `azd up` with the existing environment.
 
-If model capacity is unavailable, choose the documented secondary region and
-rerun provisioning. Do not substitute an untested model.
+If `azd up` reports `AKSCapacityHeavyUsage` or that cluster creation is
+unavailable, select an alternate supported region and rerun provisioning. For
+example:
+
+```bash
+azd env set AZURE_LOCATION eastus2
+azd up
+```
+
+If model capacity is unavailable, select an alternate region that supports the
+configured model and rerun provisioning. Do not substitute an untested model.
+
+If verification cannot resolve the model deployment, pull the latest repository
+changes and confirm that `AI_PROJECT_DEPLOYMENTS` appears in `azd env
+get-values`. Then redeploy the hosted agent and verify again:
+
+```bash
+azd deploy travel-buddy
+python scripts/verify_module.py 0
+```
 
 If policy or permissions block provisioning, follow the fallback path in
 [Troubleshooting](troubleshooting.md).
@@ -171,7 +197,8 @@ If policy or permissions block provisioning, follow the fallback path in
 Continue when:
 
 * Preflight reports ready or you have selected the fallback path
-* Provisioning is running or complete
+* Provisioning and deployment have completed successfully
+* Module 0 verification passes
 * You can explain Foundry versus Agent Framework responsibilities
 
 Next: [Module 1 - Explore the baseline hosted agent](01-baseline.md).

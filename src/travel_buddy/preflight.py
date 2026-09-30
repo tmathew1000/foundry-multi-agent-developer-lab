@@ -6,6 +6,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
+from .config import ConfigurationError, resolve_model_deployment
+
 _ENV_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
@@ -91,7 +93,15 @@ def post_provision_checks(values: Mapping[str, str]) -> list[PreflightCheck]:
         "AZURE_AI_PROJECT_ENDPOINT",
         "AZURE_AIPROJECT_ENDPOINT",
     )
-    model = _first_value(values, "AZURE_AI_MODEL_DEPLOYMENT_NAME")
+    try:
+        model = resolve_model_deployment(values)
+        model_check = _required_value_check(
+            "model-deployment",
+            model,
+            "AZURE_AI_MODEL_DEPLOYMENT_NAME or AI_PROJECT_DEPLOYMENTS",
+        )
+    except ConfigurationError as exc:
+        model_check = PreflightCheck("model-deployment", "BLOCKER", str(exc))
     mcp_url = _first_value(values, "TRAVEL_BUDDY_MCP_URL", "SERVICE_MCP_SERVER_URI")
     return [
         _url_check(
@@ -100,11 +110,7 @@ def post_provision_checks(values: Mapping[str, str]) -> list[PreflightCheck]:
             "FOUNDRY_PROJECT_ENDPOINT or AZURE_AI_PROJECT_ENDPOINT",
             require_remote=False,
         ),
-        _required_value_check(
-            "model-deployment",
-            model,
-            "AZURE_AI_MODEL_DEPLOYMENT_NAME",
-        ),
+        model_check,
         _url_check(
             "remote-mcp-url",
             mcp_url,

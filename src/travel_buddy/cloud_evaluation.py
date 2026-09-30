@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .config import ConfigurationError, resolve_model_deployment
 from .evaluation import load_cases
 
 COMPARISON_LABELS = ("baseline", "candidate")
@@ -31,13 +32,17 @@ class HostedAgentEvaluationConfig:
         env: Mapping[str, str] | None = None,
     ) -> HostedAgentEvaluationConfig:
         values = os.environ if env is None else env
+        try:
+            judge_model = resolve_model_deployment(values)
+        except ConfigurationError as exc:
+            raise EvaluationConfigurationError(str(exc)) from exc
         resolved = {
             "project_endpoint": values.get("FOUNDRY_PROJECT_ENDPOINT")
             or values.get("AZURE_AI_PROJECT_ENDPOINT"),
             "agent_name": values.get("FOUNDRY_AGENT_NAME") or values.get("AGENT_TRAVEL_BUDDY_NAME"),
             "agent_version": values.get("FOUNDRY_AGENT_VERSION")
             or values.get("AGENT_TRAVEL_BUDDY_VERSION"),
-            "judge_model": values.get("AZURE_AI_MODEL_DEPLOYMENT_NAME"),
+            "judge_model": judge_model,
         }
         missing = [name for name, value in resolved.items() if not value]
         if missing:

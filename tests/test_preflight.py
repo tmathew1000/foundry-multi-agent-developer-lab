@@ -53,6 +53,17 @@ class PreflightTests(unittest.TestCase):
 
         self.assertFalse(any(check.blocking for check in checks))
 
+    def test_post_provision_accepts_azd_model_deployment_metadata(self) -> None:
+        checks = post_provision_checks(
+            {
+                "FOUNDRY_PROJECT_ENDPOINT": "https://example.test/projects/lab",
+                "AI_PROJECT_DEPLOYMENTS": '[{"name":"travel-model"}]',
+                "SERVICE_MCP_SERVER_URI": "https://mcp.example.test",
+            }
+        )
+
+        self.assertFalse(any(check.blocking for check in checks))
+
     def test_post_provision_rejects_missing_values_and_local_mcp(self) -> None:
         checks = post_provision_checks(
             {
