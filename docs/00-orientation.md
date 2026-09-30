@@ -153,6 +153,10 @@ If `azd up` reports that neither Docker nor Podman is installed, pull the latest
 repository changes and confirm that `docker.remoteBuild` is set to `true` for
 the `mcp-server` service in `azure.yaml`. Then rerun `azd up`.
 
+If `azd up` reports that `infra/main.bicep` is missing, pull the latest
+repository changes. Confirm that `azure.yaml` defines the `foundry` and `mcp`
+infrastructure layers, then rerun `azd up` with the existing environment.
+
 If model capacity is unavailable, choose the documented secondary region and
 rerun provisioning. Do not substitute an untested model.
 

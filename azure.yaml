@@ -1,3 +1,11 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+requiredVersions:
+  azd: ">=1.34.2"
+  extensions:
+    azure.ai.agents: ">=1.0.0-beta.9"
+    azure.ai.projects: ">=1.0.0-beta.4"
+
 name: foundry-travel-buddy-lab
 services:
   ai-project:
@@ -40,17 +48,21 @@ services:
       resources:
         cpu: "0.5"
         memory: 1Gi
-    environmentVariables:
-      - name: FOUNDRY_PROJECT_ENDPOINT
-        value: ${FOUNDRY_PROJECT_ENDPOINT}
-      - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
-        value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
-      - name: TRAVEL_BUDDY_MCP_URL
-        value: ${SERVICE_MCP_SERVER_URI}/mcp
-      - name: TRAVEL_BUDDY_DESTINATIONS_PATH
-        value: data/destinations.json
-      - name: APPLICATIONINSIGHTS_CONNECTION_STRING
-        value: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+    env:
+      AZURE_AI_MODEL_DEPLOYMENT_NAME: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+      TRAVEL_BUDDY_MCP_URL: ${SERVICE_MCP_SERVER_URI}/mcp
+      TRAVEL_BUDDY_DESTINATIONS_PATH: data/destinations.json
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
     protocols:
       - protocol: responses
         version: 2.0.0
+infra:
+  layers:
+    - name: foundry
+      path: ./infra/foundry
+      provider: microsoft.foundry
+    - name: mcp
+      path: ./infra/mcp
+      provider: bicep
+      dependsOn:
+        - foundry
