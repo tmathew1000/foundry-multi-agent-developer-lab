@@ -1,0 +1,55 @@
+name: foundry-travel-buddy-lab
+services:
+  ai-project:
+    host: azure.ai.project
+    deployments:
+      - name: travel-model
+        model:
+          format: OpenAI
+          name: gpt-5.4-mini
+          version: "2026-03-17"
+        sku:
+          name: GlobalStandard
+          capacity: 20
+  mcp-server:
+    project: .
+    host: containerapp
+    language: python
+    docker:
+      path: ./src/mcp_server/Dockerfile
+      context: .
+    environmentVariables:
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "8000"
+  travel-buddy:
+    project: .
+    host: azure.ai.agent
+    language: python
+    uses:
+      - ai-project
+      - mcp-server
+    kind: hosted
+    name: travel-buddy
+    description: Four-agent TravelBuddy workflow for a self-paced developer lab.
+    codeConfiguration:
+      runtime: python_3_13
+      entryPoint: main.py
+      dependencyResolution: remote_build
+    container:
+      resources:
+        cpu: "0.5"
+        memory: 1Gi
+    environmentVariables:
+      - name: FOUNDRY_PROJECT_ENDPOINT
+        value: ${FOUNDRY_PROJECT_ENDPOINT}
+      - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+        value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+      - name: TRAVEL_BUDDY_MCP_URL
+        value: ${SERVICE_MCP_SERVER_URI}/mcp
+      - name: TRAVEL_BUDDY_DESTINATIONS_PATH
+        value: data/destinations.json
+      - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+        value: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+    protocols:
+      - protocol: responses
+        version: 2.0.0

@@ -1,0 +1,16 @@
+.env
+.azure/
+.foundry/*
+!.foundry/results/
+.foundry/results/*
+!.foundry/results/.gitkeep
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+*.egg-info/
+*.py[cod]
+coverage.xml
+htmlcov/
+dist/
+build/

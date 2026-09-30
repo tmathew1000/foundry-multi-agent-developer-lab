@@ -1,0 +1,18 @@
+kind: hosted
+name: travel-buddy
+description: Four-agent TravelBuddy workflow hosted in Microsoft Foundry.
+protocols:
+  - protocol: responses
+    version: 2.0.0
+resources:
+  cpu: "0.5"
+  memory: 1Gi
+environment_variables:
+  - name: FOUNDRY_PROJECT_ENDPOINT
+    value: ${FOUNDRY_PROJECT_ENDPOINT}
+  - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+    value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+  - name: TRAVEL_BUDDY_MCP_URL
+    value: ${TRAVEL_BUDDY_MCP_URL}
+  - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+    value: ${APPLICATIONINSIGHTS_CONNECTION_STRING}

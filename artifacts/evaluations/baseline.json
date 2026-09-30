@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "label": "baseline",
+  "artifact_kind": "fallback",
+  "metrics": {
+    "groundedness": {
+      "count": 8,
+      "average_score": 0.75,
+      "pass_rate": 0.75
+    },
+    "task_completion": {
+      "count": 8,
+      "average_score": 0.625,
+      "pass_rate": 0.625
+    },
+    "tool_selection": {
+      "count": 8,
+      "average_score": 0.625,
+      "pass_rate": 0.625
+    },
+    "tool_success": {
+      "count": 8,
+      "average_score": 0.875,
+      "pass_rate": 0.875
+    }
+  }
+}

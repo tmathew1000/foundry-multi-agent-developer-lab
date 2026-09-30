@@ -1,0 +1,19 @@
+name: travel-buddy
+version: 0.1.0
+description: Four-agent TravelBuddy hosted-agent lab.
+metadata:
+  tags:
+    scenario: travel
+    framework: microsoft-agent-framework
+template:
+  name: travel-buddy
+  kind: hosted
+  protocols:
+    - protocol: responses
+      version: 2.0.0
+  environment_variables:
+    - name: FOUNDRY_PROJECT_ENDPOINT
+    - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+    - name: TRAVEL_BUDDY_MCP_URL
+    - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+resources: []

@@ -1,0 +1,56 @@
+[
+  {
+    "source_id": "destination:lisbon",
+    "destination": "Lisbon",
+    "aliases": ["Lisboa"],
+    "summary": "Lisbon combines historic neighborhoods, riverfront viewpoints, and strong public transit for a compact city stay.",
+    "hotel_areas": [
+      "Baixa and Chiado are central and convenient for first-time visitors.",
+      "Avenida da Liberdade offers larger hotels and direct metro access."
+    ],
+    "activities": [
+      "Explore Alfama on foot and visit a miradouro.",
+      "Use a day for Belém and its riverfront monuments."
+    ],
+    "practical_guidance": [
+      "Wear shoes suitable for steep cobbled streets.",
+      "Validate transit tickets before travel where required."
+    ]
+  },
+  {
+    "source_id": "destination:tokyo",
+    "destination": "Tokyo",
+    "aliases": ["Tokyo Metropolis"],
+    "summary": "Tokyo is best planned by grouping neighborhoods along convenient rail lines and allowing transfer time between districts.",
+    "hotel_areas": [
+      "Shinjuku provides broad rail access and extensive evening dining.",
+      "Ueno is practical for museums, lower-cost lodging, and connections toward northern Tokyo."
+    ],
+    "activities": [
+      "Pair Asakusa with Ueno for a traditional district and museum day.",
+      "Consider Kamakura or Nikko for a full-day trip after checking current transport schedules."
+    ],
+    "practical_guidance": [
+      "Use a reloadable transit card for most urban rail and convenience-store purchases.",
+      "Confirm the last train when planning late evening activities."
+    ]
+  },
+  {
+    "source_id": "destination:mexico-city",
+    "destination": "Mexico City",
+    "aliases": ["CDMX", "Ciudad de México"],
+    "summary": "Mexico City rewards neighborhood-based planning because travel times vary significantly with traffic.",
+    "hotel_areas": [
+      "Roma Norte and Condesa offer restaurants, parks, and walkable evening options.",
+      "Centro Histórico is convenient for major historic sites during the day."
+    ],
+    "activities": [
+      "Visit the National Museum of Anthropology and Chapultepec Park together.",
+      "Reserve a separate half-day for the historic center and major murals."
+    ],
+    "practical_guidance": [
+      "Allow extra transfer time during peak traffic.",
+      "Use official or app-based transportation options at night."
+    ]
+  }
+]
