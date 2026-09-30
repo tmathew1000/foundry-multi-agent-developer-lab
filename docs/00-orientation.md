@@ -103,6 +103,9 @@ Provisioning may take 20 to 30 minutes. Continue with the architecture review
 while the command runs. If `azd up` requires your terminal, open a second
 terminal for the next section.
 
+The MCP container image builds remotely in Azure. Codespaces does not require
+a local Docker or Podman installation for this deployment.
+
 ## Understand what is automated
 
 The deployment creates:
@@ -145,6 +148,10 @@ PASS Module 0: local tools and Azure context are ready
 ## Troubleshooting
 
 If Azure authentication expires, repeat both sign-in commands.
+
+If `azd up` reports that neither Docker nor Podman is installed, pull the latest
+repository changes and confirm that `docker.remoteBuild` is set to `true` for
+the `mcp-server` service in `azure.yaml`. Then rerun `azd up`.
 
 If model capacity is unavailable, choose the documented secondary region and
 rerun provisioning. Do not substitute an untested model.

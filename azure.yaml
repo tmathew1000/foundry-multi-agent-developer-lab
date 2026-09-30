@@ -18,6 +18,7 @@ services:
     docker:
       path: ./src/mcp_server/Dockerfile
       context: .
+      remoteBuild: true
     environmentVariables:
       MCP_HOST: 0.0.0.0
       MCP_PORT: "8000"
