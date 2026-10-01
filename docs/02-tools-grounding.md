@@ -51,6 +51,12 @@ Implement these behaviors:
 4. Convert USD to the target currency.
 5. Return the input, output, rate, and workshop-data notice.
 
+> [!TIP]
+> Try implementing the TODO and running the focused tests before viewing the
+> solution checkpoint. If you remain blocked after five minutes, run
+> `python scripts/restore_checkpoint.py 2` and compare the restored
+> implementation with your attempt.
+
 Run the focused tests:
 
 ```bash
