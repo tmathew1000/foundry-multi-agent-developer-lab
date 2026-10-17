@@ -2,7 +2,7 @@
 title: Prerequisites and subscription checks
 description: Required skills, Azure permissions, quotas, policies, and workstation setup for the lab
 author: tmathew1000
-ms.date: 2026-09-30
+ms.date: 2026-10-17
 ms.topic: reference
 keywords:
   - prerequisites
@@ -67,6 +67,7 @@ Confirm each item before starting:
 | Region | Primary or documented secondary region allowed |
 | Model access | Selected model available to the subscription |
 | Model quota | Sufficient tokens-per-minute capacity |
+| Search | Region supports agentic retrieval and Basic tier resources |
 | Azure Policy | Resource types and public endpoints permitted |
 | Role assignments | Participant can create role assignments |
 | Providers | Registration is allowed |
@@ -81,6 +82,7 @@ Provisioning may register or use:
 * `Microsoft.Insights`
 * `Microsoft.OperationalInsights`
 * `Microsoft.Storage`
+* `Microsoft.Search`
 * `Microsoft.ContainerRegistry`
 * `Microsoft.App`
 
@@ -88,8 +90,9 @@ Provider registration can take several minutes in a new subscription.
 
 ## Regional model capacity
 
-The default logical deployment name is `travel-model`. The model behind that
-name is selected by the infrastructure configuration.
+The default logical deployments are `travel-model` for chat and
+`travel-embeddings` for Foundry IQ indexing. The models behind those names are
+selected by the infrastructure configuration.
 
 Availability in the Foundry catalog does not guarantee capacity in your
 subscription. The preflight checks:
@@ -124,17 +127,20 @@ The automated setup creates a disposable environment that includes:
 * One resource group
 * One Microsoft Foundry project
 * One model deployment
+* One embedding deployment
 * One hosted TravelBuddy deployment
 * One scale-to-zero MCP service
 * Application Insights and Log Analytics
 * Supporting storage, registry, and managed identities
+* One Basic Azure AI Search service
+* One Foundry IQ knowledge source and knowledge base
 
 ## Cost assumption
 
 Plan for five hours of resource lifetime:
 
-* Expected cost: USD 3 to USD 5
-* Conservative allowance: USD 7
+* Expected cost: USD 5 to USD 10
+* Current Azure AI Search and model pricing must be checked before delivery
 * Possible Codespaces charge: depends on your GitHub plan and included quota
 
 Cost varies with model selection, token volume, region, retries, and evaluation

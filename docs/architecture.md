@@ -2,7 +2,7 @@
 title: TravelBuddy architecture
 description: Readable architecture diagrams for the Foundry and Agent Framework lab
 author: tmathew1000
-ms.date: 2026-09-30
+ms.date: 2026-10-17
 ms.topic: concept
 keywords:
   - architecture
@@ -33,10 +33,13 @@ flowchart TB
     D[Developer in Codespaces]
     D --> FP[Microsoft Foundry project]
     FP --> MD[travel-model deployment]
+    FP --> ED[travel-embeddings deployment]
     FP --> HA[TravelBuddy hosted agent]
     FP --> EV[Evaluation suite]
     HA --> MCP[Travel MCP service<br/>Azure Container Apps]
-    HA --> GD[Destination grounding data]
+    HA --> IQ[Foundry IQ knowledge base]
+    IQ --> SRCH[Azure AI Search]
+    SRCH --> GD[Blob destination documents]
     HA -. OpenTelemetry .-> AI[Application Insights]
     AI --> FP
 
@@ -44,8 +47,8 @@ flowchart TB
     classDef managed fill:#e5f1fb,stroke:#0078d4,color:#000
     classDef azure fill:#fff4ce,stroke:#986f0b,color:#000
     class D learner
-    class FP,MD,HA,EV managed
-    class MCP,GD,AI azure
+    class FP,MD,ED,HA,EV managed
+    class MCP,IQ,SRCH,GD,AI azure
 ```
 
 Green identifies the participant environment. Blue identifies Foundry-managed
@@ -67,7 +70,8 @@ flowchart TB
     F --> FN[Python function tools]
     H --> MCP[MCP travel tools]
     A --> MCP
-    A --> G[Grounding context]
+    H --> G[Foundry IQ]
+    A --> G
 ```
 
 The coordinator and specialists are four logical agents. Foundry hosts the
@@ -79,11 +83,27 @@ complete graph as one deployment.
 | ------- | ---------------- | -------------- |
 | Coordinator | Route and synthesize | Routing and termination |
 | Flights | Flights, timing, weather, and currency | Python function tools |
-| Hotels | Lodging areas, budgets, and trade-offs | MCP and grounding |
-| Activities | Experiences and day-by-day plans | MCP and grounding |
+| Hotels | Lodging areas, budgets, and trade-offs | MCP and Foundry IQ |
+| Activities | Experiences and day-by-day plans | MCP and Foundry IQ |
 
 The division is intentionally visible so you can reason about routing and inspect
 each specialist in a trace.
+
+## Knowledge and tenancy
+
+All required resources remain in the participant's Azure subscription and
+Microsoft Entra tenant. The synthesized Foundry resources can use a dedicated
+Foundry resource group. Search, Storage, Container Apps, registry, monitoring,
+and supporting identities use the primary `azd` resource group.
+
+The Search service has a managed identity that can read the Blob knowledge
+container and invoke the Foundry chat and embedding deployments. The hosted
+TravelBuddy identity receives query-only access to Search. The deployment
+identity creates knowledge objects and uploads the workshop documents.
+
+The local provider remains available as a deterministic baseline and recovery
+path. Selecting `foundry_iq` replaces retrieval, not the Hotels or Activities
+specialist boundaries.
 
 ## Trace hierarchy
 
@@ -96,7 +116,9 @@ flowchart TB
     C --> H[Hotels specialist]
     H --> MC[MCP call]
     C --> A[Activities specialist]
-    A --> GR[Grounding retrieval]
+    A --> GR[Foundry IQ retrieval]
+    GR --> QP[Query planning]
+    GR --> CI[Citations]
     A --> MA[MCP call]
     C --> S[Final synthesis]
 ```

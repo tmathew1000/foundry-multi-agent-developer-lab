@@ -48,6 +48,9 @@ class PreflightTests(unittest.TestCase):
                 "AZURE_AI_PROJECT_ENDPOINT": "https://example.test/projects/lab",
                 "AZURE_AI_MODEL_DEPLOYMENT_NAME": "travel-model",
                 "SERVICE_MCP_SERVER_URI": "https://mcp.example.test",
+                "FOUNDRY_IQ_SEARCH_ENDPOINT": "https://search.example.test",
+                "FOUNDRY_IQ_KNOWLEDGE_BASE": "travel-destinations",
+                "FOUNDRY_IQ_KNOWLEDGE_SOURCE": "travel-destinations-blob",
             }
         )
 
@@ -73,7 +76,16 @@ class PreflightTests(unittest.TestCase):
         )
 
         blockers = {check.name for check in checks if check.blocking}
-        self.assertEqual({"model-deployment", "remote-mcp-url"}, blockers)
+        self.assertEqual(
+            {
+                "model-deployment",
+                "remote-mcp-url",
+                "foundry-iq-search-endpoint",
+                "foundry-iq-knowledge-base",
+                "foundry-iq-knowledge-source",
+            },
+            blockers,
+        )
 
 
 if __name__ == "__main__":

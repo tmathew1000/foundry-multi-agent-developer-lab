@@ -26,6 +26,14 @@ def module_checks(root: Path, module: str) -> list[tuple[str, Callable[[], bool]
         "0": [
             ("project configuration", lambda: (root / "azure.yaml").is_file()),
             ("MCP container", lambda: (root / "src/mcp_server/Dockerfile").is_file()),
+            (
+                "Foundry IQ infrastructure",
+                lambda: (root / "infra/knowledge/main.bicep").is_file(),
+            ),
+            (
+                "Foundry IQ bootstrap",
+                lambda: (root / "scripts/bootstrap_foundry_iq.py").is_file(),
+            ),
         ],
         "1": [
             ("hosted entry point", lambda: (root / "main.py").is_file()),
@@ -37,6 +45,14 @@ def module_checks(root: Path, module: str) -> list[tuple[str, Callable[[], bool]
             (
                 "grounding configuration",
                 lambda: (root / "src/travel_buddy/integrations.py").is_file(),
+            ),
+            (
+                "Foundry IQ grounding provider",
+                lambda: (root / "src/travel_buddy/foundry_iq.py").is_file(),
+            ),
+            (
+                "Foundry IQ knowledge documents",
+                lambda: len(tuple((root / "data/foundry-iq").glob("*.md"))) >= 6,
             ),
         ],
         "3": [

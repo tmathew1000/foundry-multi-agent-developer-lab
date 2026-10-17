@@ -56,15 +56,36 @@ def resolve_model_deployment(values: Mapping[str, str]) -> str | None:
 
 @dataclass(frozen=True)
 class GroundingSettings:
+    provider: str = "local"
     data_path: str = "data/destinations.json"
+    search_endpoint: str | None = None
+    knowledge_base: str | None = None
+    knowledge_source: str | None = None
+    api_version: str = "2026-08-01-preview"
 
     @property
     def enabled(self) -> bool:
-        return bool(self.data_path)
+        return self.provider in {"local", "foundry_iq"}
 
     def validate(self) -> None:
-        if not self.data_path.strip():
+        if self.provider not in {"local", "foundry_iq"}:
+            raise ConfigurationError("TRAVEL_BUDDY_GROUNDING_PROVIDER must be local or foundry_iq.")
+        if self.provider == "local" and not self.data_path.strip():
             raise ConfigurationError("TRAVEL_BUDDY_DESTINATIONS_PATH cannot be blank.")
+        if self.provider == "foundry_iq":
+            missing = [
+                name
+                for name, value in (
+                    ("FOUNDRY_IQ_SEARCH_ENDPOINT", self.search_endpoint),
+                    ("FOUNDRY_IQ_KNOWLEDGE_BASE", self.knowledge_base),
+                    ("FOUNDRY_IQ_KNOWLEDGE_SOURCE", self.knowledge_source),
+                )
+                if not value or not value.strip()
+            ]
+            if missing:
+                raise ConfigurationError(
+                    "Missing required Foundry IQ configuration: " + ", ".join(missing)
+                )
 
 
 @dataclass(frozen=True)
@@ -84,7 +105,15 @@ class TravelBuddySettings:
             mcp_url=values.get("TRAVEL_BUDDY_MCP_URL"),
             app_insights_connection_string=values.get("APPLICATIONINSIGHTS_CONNECTION_STRING"),
             grounding=GroundingSettings(
+                provider=values.get("TRAVEL_BUDDY_GROUNDING_PROVIDER", "local"),
                 data_path=values.get("TRAVEL_BUDDY_DESTINATIONS_PATH", "data/destinations.json"),
+                search_endpoint=values.get("FOUNDRY_IQ_SEARCH_ENDPOINT"),
+                knowledge_base=values.get("FOUNDRY_IQ_KNOWLEDGE_BASE"),
+                knowledge_source=values.get("FOUNDRY_IQ_KNOWLEDGE_SOURCE"),
+                api_version=values.get(
+                    "FOUNDRY_IQ_API_VERSION",
+                    "2026-08-01-preview",
+                ),
             ),
         )
         settings.grounding.validate()

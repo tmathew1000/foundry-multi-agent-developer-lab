@@ -2,7 +2,7 @@
 title: Module 6 - Review and clean up
 description: Confirm the learning outcomes and remove all disposable Azure resources
 author: tmathew1000
-ms.date: 2026-09-30
+ms.date: 2026-10-17
 ms.topic: tutorial
 keywords:
   - cleanup
@@ -30,7 +30,9 @@ flowchart TB
     F --> FN[Function tools]
     HT --> MCP[MCP service]
     A --> MCP
-    A --> G[Grounding]
+    HT --> IQ[Foundry IQ]
+    A --> IQ
+    IQ --> B[Blob knowledge]
     H -. telemetry .-> T[Tracing]
     H -. quality .-> E[Evaluation]
 ```
@@ -50,11 +52,12 @@ you want to retain.
 Confirm that you can answer:
 
 1. Why are four logical agents represented by one hosted endpoint?
-2. When should an application use a function tool, MCP, or grounding?
+2. When should an application use a function tool, MCP, or Foundry IQ?
 3. What does `GroupChatBuilder` contribute?
 4. What does `workflow.as_agent()` contribute?
 5. How does trace evidence differ from final-response inspection?
 6. Why compare evaluation versions instead of testing a few prompts manually?
+7. Why should Foundry IQ access be assigned only to relevant specialists?
 
 ## Feature map
 
@@ -66,7 +69,9 @@ Confirm that you can answer:
 | Agent Framework | Code-first agents and multi-agent orchestration |
 | Function tool | Deterministic currency operation |
 | MCP | Remote reusable travel operations |
-| Grounding | Destination context |
+| Foundry IQ | Managed destination knowledge with citations |
+| Azure AI Search | Agentic retrieval and generated indexing pipeline |
+| Blob Storage | Curated workshop knowledge documents |
 | Managed identity | Authentication without API keys |
 | Tracing | Runtime diagnosis |
 | Evaluation | Baseline and candidate quality comparison |
@@ -115,6 +120,8 @@ You can now apply the pattern to another scenario:
 Explore these topics after the lab:
 
 * Durable workflows and checkpointing
+* SharePoint and OneLake knowledge sources
+* Document-level permission synchronization
 * Agent memory
 * Continuous evaluation
 * CI/CD and version promotion

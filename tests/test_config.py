@@ -51,9 +51,35 @@ class TravelBuddySettingsTests(unittest.TestCase):
 
     def test_multiple_model_deployments_require_explicit_selection(self) -> None:
         with self.assertRaisesRegex(ConfigurationError, "multiple deployments"):
-            resolve_model_deployment(
-                {"AI_PROJECT_DEPLOYMENTS": '[{"name":"one"},{"name":"two"}]'}
+            resolve_model_deployment({"AI_PROJECT_DEPLOYMENTS": '[{"name":"one"},{"name":"two"}]'})
+
+    def test_foundry_iq_grounding_requires_all_remote_values(self) -> None:
+        with self.assertRaisesRegex(
+            ConfigurationError,
+            "FOUNDRY_IQ_KNOWLEDGE_BASE",
+        ):
+            TravelBuddySettings.from_env(
+                {
+                    "TRAVEL_BUDDY_GROUNDING_PROVIDER": "foundry_iq",
+                    "FOUNDRY_IQ_SEARCH_ENDPOINT": "https://search.example.test",
+                }
             )
+
+    def test_foundry_iq_grounding_reads_remote_values(self) -> None:
+        settings = TravelBuddySettings.from_env(
+            {
+                "TRAVEL_BUDDY_GROUNDING_PROVIDER": "foundry_iq",
+                "FOUNDRY_IQ_SEARCH_ENDPOINT": "https://search.example.test",
+                "FOUNDRY_IQ_KNOWLEDGE_BASE": "travel-destinations",
+                "FOUNDRY_IQ_KNOWLEDGE_SOURCE": "travel-destinations-blob",
+            }
+        )
+
+        self.assertEqual("foundry_iq", settings.grounding.provider)
+        self.assertEqual(
+            "travel-destinations",
+            settings.grounding.knowledge_base,
+        )
 
 
 if __name__ == "__main__":

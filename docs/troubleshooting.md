@@ -1,8 +1,8 @@
 ---
 title: Troubleshooting
-description: Symptom-based recovery guidance for setup, deployment, MCP, tracing, and evaluation
+description: Symptom-based recovery for setup, Foundry IQ, MCP, tracing, and evaluation
 author: tmathew1000
-ms.date: 2026-09-30
+ms.date: 2026-10-17
 ms.topic: troubleshooting
 keywords:
   - troubleshooting
@@ -122,6 +122,32 @@ Check:
 * The retrieval query and top-k value are reasonable
 
 Do not replace a failed grounding call with ungrounded model knowledge.
+
+## Foundry IQ bootstrap fails
+
+Check:
+
+* The Search region supports agentic retrieval.
+* The Search service is Basic tier or higher.
+* Both `travel-model` and `travel-embeddings` deployed successfully.
+* The Search managed identity can read Blob Storage.
+* The Search managed identity has Cognitive Services User on the Foundry account.
+* The deployment identity has Search Service Contributor.
+* Role assignments have finished propagating.
+
+Rerun `azd provision` after correcting the reported issue. The post-provision
+hook updates the same deterministic knowledge source and knowledge base.
+
+## Foundry IQ retrieval fails
+
+An HTTP 401 indicates authentication failed. An HTTP 403 usually indicates that
+the caller lacks Search Index Data Reader or that a new role assignment has not
+propagated. An empty result can indicate incomplete indexing or a query outside
+the workshop documents.
+
+Do not silently switch to local grounding. Set
+`TRAVEL_BUDDY_GROUNDING_PROVIDER=local` explicitly when following the documented
+recovery path.
 
 ## Traces do not appear
 

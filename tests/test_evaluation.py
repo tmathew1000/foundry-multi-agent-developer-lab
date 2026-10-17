@@ -6,11 +6,11 @@ from travel_buddy.evaluation import EvaluationCase, evaluate_text, load_cases, p
 
 
 class EvaluationTests(unittest.TestCase):
-    def test_repository_dataset_has_eight_cases(self) -> None:
+    def test_repository_dataset_has_ten_cases(self) -> None:
         path = Path(__file__).parents[1] / "evaluations" / "travel_buddy_cases.jsonl"
         cases = load_cases(path)
-        self.assertEqual(8, len(cases))
-        self.assertEqual(8, len({case.case_id for case in cases}))
+        self.assertEqual(10, len(cases))
+        self.assertEqual(10, len({case.case_id for case in cases}))
 
     def test_text_evaluator_reports_missing_and_forbidden_terms(self) -> None:
         case = EvaluationCase(

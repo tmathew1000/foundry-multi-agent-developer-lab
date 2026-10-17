@@ -2,7 +2,7 @@
 title: Instructor guide
 description: Facilitation, timing, checkpoints, demonstrations, and recovery guidance
 author: tmathew1000
-ms.date: 2026-09-30
+ms.date: 2026-10-17
 ms.topic: reference
 keywords:
   - instructor
@@ -26,6 +26,8 @@ Complete the lab from a new subscription path and verify:
 * `azd up` and `azd down --purge`
 * Hosted-agent readiness
 * MCP scale-from-zero behavior
+* Foundry IQ ingestion and retrieval smoke test
+* Azure AI Search regional support and current pricing
 * Trace ingestion
 * Evaluation suite completion
 * Every checkpoint restore
@@ -40,7 +42,7 @@ Record current service advisories and model-capacity concerns.
 | 0:00 | Introduce outcomes and start preflight | Subscription validated |
 | 0:15 | Explain architecture while provisioning runs | `azd up` started |
 | 0:40 | Demonstrate source-to-hosting relationship | Baseline invoked |
-| 1:10 | Contrast function, MCP, and grounding | Capabilities verified |
+| 1:10 | Contrast capability types | Foundry IQ verified |
 | 1:50 | Explain manager-led orchestration | Activities registered |
 | 2:25 | Break | Multi-agent tests pass |
 | 2:35 | Demonstrate trace hierarchy | Candidate deployed |
@@ -56,6 +58,8 @@ Reinforce these distinctions:
 * Foundry provides model access, hosting, observability, evaluation, and lifecycle.
 * Logical-agent count does not equal deployment count.
 * Tools perform actions; grounding contributes context.
+* Foundry IQ manages reusable, multi-source knowledge and citations.
+* Permission enforcement depends on source support and explicit configuration.
 * Traces diagnose execution; evaluations measure behavior across cases.
 * Automation removes setup work, not engineering decisions.
 
@@ -72,6 +76,14 @@ Complete workflow:
 ```text
 Plan four days in Tokyo from Lisbon. Keep the hotel under 200 EUR per night,
 include a day trip, and show major prices in JPY.
+```
+
+Foundry IQ comparison:
+
+```text
+Recommend a Tokyo neighborhood under 200 EUR per night with evening dining,
+convenient transportation, and a rainy-day activity. Cite the supporting
+sources.
 ```
 
 Controlled failure:
@@ -104,6 +116,11 @@ remote capability discovery and invocation.
 
 The answer can look plausible despite incorrect routing, failed tools, or
 ungrounded claims. Use traces and evaluations.
+
+### Foundry IQ automatically provides live travel data
+
+The workshop knowledge base contains curated destination guidance. Live prices,
+availability, schedules, and wait times remain operational tool responsibilities.
 
 ### Evaluation is a final release gate
 

@@ -2,22 +2,23 @@
 title: Build, Observe, and Improve a Multi-Agent Solution with Microsoft Foundry
 description: Four-hour self-paced developer lab for Microsoft Foundry and Microsoft Agent Framework
 author: tmathew1000
-ms.date: 2026-09-30
+ms.date: 2026-10-17
 ms.topic: tutorial
 keywords:
   - microsoft foundry
   - microsoft agent framework
   - multi-agent
   - hosted agents
+  - foundry iq
   - tracing
   - evaluation
 estimated_reading_time: 6
 ---
 
 Build a four-agent travel-planning solution with Microsoft Agent Framework and
-Microsoft Foundry. You will add function and MCP tools, ground recommendations
-with destination content, deploy the workflow as a hosted agent, inspect its
-distributed traces, and compare evaluation results after an improvement.
+Microsoft Foundry. You will add function and MCP tools, compare local grounding
+with a Foundry IQ knowledge base, deploy the workflow as a hosted agent, inspect
+its distributed traces, and compare evaluation results after an improvement.
 
 [![Validate lab](https://github.com/tmathew1000/foundry-multi-agent-developer-lab/actions/workflows/validate.yml/badge.svg)](https://github.com/tmathew1000/foundry-multi-agent-developer-lab/actions/workflows/validate.yml)
 
@@ -30,7 +31,8 @@ distributed traces, and compare evaluation results after an improvement.
 By the end of the lab, you will be able to:
 
 * Explain the responsibilities of Microsoft Foundry and Microsoft Agent Framework
-* Extend an agent with a Python function tool, a remote MCP tool, and grounding
+* Extend an agent with a Python function tool, a remote MCP tool, and Foundry IQ
+* Compare local lexical retrieval with managed, multi-source agentic retrieval
 * Coordinate four logical agents with `GroupChatBuilder`
 * Expose the workflow as one hosted agent with `workflow.as_agent()`
 * Follow coordinator, specialist, model, and tool calls in a Foundry trace
@@ -49,7 +51,9 @@ flowchart LR
     F --> FT[Function tools]
     HT --> M[MCP travel service]
     A --> M
-    A --> G[Grounding content]
+    HT --> IQ[Foundry IQ knowledge base]
+    A --> IQ
+    IQ --> B[Blob destination documents]
     H -. traces .-> O[Foundry observability]
     H -. results .-> E[Evaluation suite]
 ```
@@ -67,6 +71,7 @@ itinerary.
 | Coordinates specialist agents | Manages identity and connections |
 | Builds the group-chat workflow | Collects OpenTelemetry traces |
 | Exposes the workflow as an agent | Runs and compares evaluations |
+| Assigns knowledge to specialists | Provides Foundry IQ lifecycle integration |
 
 ## Schedule
 
@@ -74,13 +79,12 @@ itinerary.
 | -------- | ---------- | -----: |
 | 0 | Orient, validate, and start provisioning | 15 minutes |
 | 1 | Explore and invoke the baseline agent | 30 minutes |
-| 2 | Add tools and grounding | 40 minutes |
+| 2 | Add tools and managed knowledge | 40 minutes |
 | 3 | Build the four-agent workflow | 55 minutes |
 | Break | Pause | 10 minutes |
 | 4 | Deploy and diagnose with tracing | 35 minutes |
 | 5 | Evaluate and improve | 40 minutes |
 | 6 | Review and remove resources | 15 minutes |
-| Buffer | Recovery and service delays | 20 minutes |
 
 ## Start here
 
@@ -102,9 +106,10 @@ complete the diagnostic and evaluation learning outcomes.
 
 ## Cost and cleanup
 
-Budget approximately USD 3 to USD 5 for the expected five-hour resource lifetime,
-with USD 7 as a conservative allowance. Actual cost depends on model pricing,
-tokens, region, and retries.
+Budget approximately USD 5 to USD 10 for the expected five-hour resource
+lifetime. Azure AI Search, model pricing, tokens, region, indexing, retries, and
+evaluation runs affect the final amount. Check current Azure pricing before
+delivering the lab.
 
 Run cleanup at the end of the lab:
 
@@ -128,10 +133,10 @@ tests/                Offline unit and contract tests
 
 ## Scope
 
-The required path focuses on hosted agents, tools, grounding, orchestration,
-tracing, and evaluation. Private networking, CI/CD, fine-tuning, durable
-workflows, voice, and production-scale operations are intentionally outside the
-four-hour path.
+The required path focuses on hosted agents, tools, Foundry IQ, orchestration,
+tracing, and evaluation. SharePoint and OneLake knowledge sources, private
+networking, CI/CD, fine-tuning, durable workflows, voice, and production-scale
+operations are intentionally outside the four-hour path.
 
 ## Attribution
 

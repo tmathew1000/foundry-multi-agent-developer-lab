@@ -2,7 +2,7 @@
 title: Module 0 - Orientation and preflight
 description: Validate the subscription, start provisioning, and understand the lab architecture
 author: tmathew1000
-ms.date: 2026-09-30
+ms.date: 2026-10-17
 ms.topic: tutorial
 keywords:
   - preflight
@@ -27,6 +27,7 @@ flowchart LR
     P --> AZ[Disposable Azure environment]
     AZ --> F[Foundry project]
     AZ --> M[travel-model]
+    AZ --> IQ[Foundry IQ knowledge base]
     AZ --> O[Observability]
 ```
 
@@ -100,7 +101,8 @@ Provision and deploy:
 azd up
 ```
 
-Provisioning may take 20 to 30 minutes. Continue with the architecture review
+Provisioning may take 25 to 35 minutes because the initial run creates and
+indexes the Foundry IQ knowledge source. Continue with the architecture review
 while the command runs. If `azd up` requires your terminal, open a second
 terminal for the next section.
 
@@ -117,8 +119,12 @@ a local Docker or Podman installation for this deployment.
 The deployment creates:
 
 * Foundry project and model deployment
+* Chat and embedding model deployments
 * Hosted-agent runtime resources
 * Managed identities and required roles
+* Azure AI Search and Blob Storage for Foundry IQ
+* Six indexed destination knowledge documents
+* A reusable `travel-destinations` knowledge base
 * Scale-to-zero MCP hosting
 * Application Insights and Log Analytics
 * Supporting container and storage resources
@@ -154,7 +160,8 @@ PASS Module 0: local tools and deployed Azure context are ready
 ```
 
 This verification reads the active `azd` environment and requires the Foundry
-project endpoint, model deployment, and remote MCP endpoint.
+project endpoint, model deployment, remote MCP endpoint, Search endpoint,
+knowledge source, and knowledge base.
 
 ## Troubleshooting
 
@@ -189,6 +196,11 @@ azd deploy travel-buddy
 python scripts/verify_module.py 0
 ```
 
+If Foundry IQ indexing is still running, wait for the post-provision hook to
+finish. Do not cancel `azd up` after the infrastructure deployment succeeds.
+The hook uploads the workshop documents, creates the knowledge source and
+knowledge base, and runs a retrieval smoke test.
+
 If policy or permissions block provisioning, follow the fallback path in
 [Troubleshooting](troubleshooting.md).
 
@@ -199,6 +211,6 @@ Continue when:
 * Preflight reports ready or you have selected the fallback path
 * Provisioning and deployment have completed successfully
 * Module 0 verification passes
-* You can explain Foundry versus Agent Framework responsibilities
+* You can explain Foundry, Foundry IQ, and Agent Framework responsibilities
 
 Next: [Module 1 - Explore the baseline hosted agent](01-baseline.md).

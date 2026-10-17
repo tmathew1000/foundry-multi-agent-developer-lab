@@ -25,7 +25,7 @@ def main() -> int:
         if module == "0":
             checks.append(
                 (
-                    "deployed Foundry, model, and remote MCP environment values",
+                    "deployed Foundry, model, MCP, and Foundry IQ environment values",
                     lambda: _post_provision_environment_is_ready(root),
                 )
             )
@@ -39,9 +39,9 @@ def main() -> int:
                 print(f"PASS {description}")
         if not module_failed and module != "3":
             descriptions = {
-                "0": "local tools and deployed Azure context are ready",
+                "0": "Foundry, model, MCP, and Foundry IQ resources are ready",
                 "1": "hosted-agent baseline is valid",
-                "2": "function, MCP, and grounding contracts are valid",
+                "2": "function, MCP, local grounding, and Foundry IQ contracts are valid",
                 "4": "tracing configuration is present",
                 "5": "baseline and candidate results are comparable",
             }

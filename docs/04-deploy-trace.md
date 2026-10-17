@@ -2,7 +2,7 @@
 title: Module 4 - Deploy and diagnose with tracing
 description: Deploy the multi-agent version and inspect its distributed execution trace
 author: tmathew1000
-ms.date: 2026-09-30
+ms.date: 2026-10-17
 ms.topic: tutorial
 keywords:
   - deployment
@@ -25,7 +25,7 @@ flowchart TB
     I[Hosted invocation] --> W[Agent Framework workflow]
     W --> C[Coordinator]
     C --> S[Specialist]
-    S --> T[Tool or grounding]
+    S --> T[Tool or Foundry IQ]
     I -. trace context .-> O[Foundry observability]
     W -. spans .-> O
     C -. spans .-> O
@@ -34,7 +34,7 @@ flowchart TB
 ```
 
 Trace context connects the hosted request to Agent Framework, model, tool, MCP,
-and grounding activity.
+Foundry IQ retrieval, and citation activity.
 
 ## Required: deploy the candidate
 
@@ -82,7 +82,9 @@ Find:
 * Selected specialists
 * Model calls
 * Function and MCP calls
-* Grounding retrieval
+* Foundry IQ knowledge retrieval
+* Query-planning or source-retrieval activity
+* Retrieved references and citations
 * Final synthesis
 
 Record:
@@ -90,6 +92,8 @@ Record:
 * Which specialist ran first
 * Which operation had the highest latency
 * Whether an unnecessary specialist ran
+* Whether Foundry IQ ran only for destination knowledge
+* Which sources supported the destination recommendation
 * Token usage for the complete request
 
 ## Required: diagnose the controlled failure

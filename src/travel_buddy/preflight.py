@@ -103,6 +103,9 @@ def post_provision_checks(values: Mapping[str, str]) -> list[PreflightCheck]:
     except ConfigurationError as exc:
         model_check = PreflightCheck("model-deployment", "BLOCKER", str(exc))
     mcp_url = _first_value(values, "TRAVEL_BUDDY_MCP_URL", "SERVICE_MCP_SERVER_URI")
+    search_endpoint = _first_value(values, "FOUNDRY_IQ_SEARCH_ENDPOINT")
+    knowledge_base = _first_value(values, "FOUNDRY_IQ_KNOWLEDGE_BASE")
+    knowledge_source = _first_value(values, "FOUNDRY_IQ_KNOWLEDGE_SOURCE")
     return [
         _url_check(
             "foundry-project-endpoint",
@@ -116,6 +119,22 @@ def post_provision_checks(values: Mapping[str, str]) -> list[PreflightCheck]:
             mcp_url,
             "TRAVEL_BUDDY_MCP_URL or SERVICE_MCP_SERVER_URI",
             require_remote=True,
+        ),
+        _url_check(
+            "foundry-iq-search-endpoint",
+            search_endpoint,
+            "FOUNDRY_IQ_SEARCH_ENDPOINT",
+            require_remote=True,
+        ),
+        _required_value_check(
+            "foundry-iq-knowledge-base",
+            knowledge_base,
+            "FOUNDRY_IQ_KNOWLEDGE_BASE",
+        ),
+        _required_value_check(
+            "foundry-iq-knowledge-source",
+            knowledge_source,
+            "FOUNDRY_IQ_KNOWLEDGE_SOURCE",
         ),
     ]
 
@@ -135,7 +154,8 @@ def caveat_checks() -> list[PreflightCheck]:
             "CAVEAT",
             (
                 "Model and Container Apps quota is subscription- and region-specific; "
-                "azd provisioning remains the authoritative capacity check."
+                "Foundry IQ also requires an Azure AI Search region that supports agentic "
+                "retrieval. azd provisioning remains the authoritative capacity check."
             ),
         ),
         PreflightCheck(

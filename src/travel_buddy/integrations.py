@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Any
 
 from .config import ConfigurationError, TravelBuddySettings
+from .foundry_iq import FoundryIQGroundingProvider
 from .grounding import DestinationGroundingProvider
 
 ToolFactory = Callable[[TravelBuddySettings], Any]
@@ -36,4 +37,13 @@ def build_grounding_provider(
         raise ConfigurationError("Destination grounding must be enabled.")
     if factory is not None:
         return factory(settings)
-    return DestinationGroundingProvider(settings.grounding.data_path)
+    if settings.grounding.provider == "local":
+        return DestinationGroundingProvider(settings.grounding.data_path)
+    if settings.grounding.provider == "foundry_iq":
+        return FoundryIQGroundingProvider(
+            endpoint=settings.grounding.search_endpoint or "",
+            knowledge_base=settings.grounding.knowledge_base or "",
+            knowledge_source=settings.grounding.knowledge_source or "",
+            api_version=settings.grounding.api_version,
+        )
+    raise ConfigurationError(f"Unsupported grounding provider: {settings.grounding.provider}")

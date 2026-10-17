@@ -2,7 +2,7 @@
 title: Module 5 - Evaluate and improve
 description: Run a baseline evaluation, improve routing, and compare the candidate
 author: tmathew1000
-ms.date: 2026-09-30
+ms.date: 2026-10-17
 ms.topic: tutorial
 keywords:
   - evaluation
@@ -43,6 +43,7 @@ The cases cover:
 * Complete itineraries that need all specialists
 * Tool selection
 * Grounded recommendations
+* Multi-source Foundry IQ synthesis and citations
 * Unsupported input
 * Requests that should not trigger unnecessary tools
 
@@ -60,11 +61,20 @@ The lab combines deterministic and model-based checks:
 | Tool-call accuracy | Were tool arguments valid? |
 | Tool success | Did the operation complete successfully? |
 | Groundedness | Are recommendations supported by supplied context? |
+| Citation coverage | Did the answer retain the required retrieval evidence? |
 | Relevance | Is the final response focused on the request? |
 
 The Foundry run uses agent and quality evaluators. The evaluation helper also
 checks required and forbidden response terms deterministically, which reduces
 dependence on an LLM judge.
+
+Compare these Foundry IQ cases:
+
+* A Tokyo recommendation that needs neighborhood, transit, and activity sources
+* A live wait-time request that the knowledge base cannot support
+
+The improved candidate should preserve citations and avoid inventing live
+operational facts.
 
 ## Required: run the baseline
 
