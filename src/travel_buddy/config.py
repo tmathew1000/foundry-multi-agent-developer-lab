@@ -34,9 +34,7 @@ def resolve_model_deployment(values: Mapping[str, str]) -> str | None:
     names: list[str] = []
     for deployment in deployments:
         if not isinstance(deployment, dict):
-            raise ConfigurationError(
-                "Each AI_PROJECT_DEPLOYMENTS entry must be a JSON object."
-            )
+            raise ConfigurationError("Each AI_PROJECT_DEPLOYMENTS entry must be a JSON object.")
         name = deployment.get("name")
         if not isinstance(name, str) or not name.strip():
             raise ConfigurationError(
