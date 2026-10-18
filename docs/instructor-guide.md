@@ -26,7 +26,7 @@ Complete the lab from a new subscription path and verify:
 * `azd up` and `azd down --purge`
 * Hosted-agent readiness
 * MCP scale-from-zero behavior
-* Foundry IQ ingestion and retrieval smoke test
+* Direct upload of all six Foundry IQ files, repeat-run updates, and cited retrieval
 * Azure AI Search regional support and current pricing
 * Trace ingestion
 * Evaluation suite completion
@@ -34,6 +34,28 @@ Complete the lab from a new subscription path and verify:
 * Saved trace and evaluation artifacts
 
 Record current service advisories and model-capacity concerns.
+
+### Prepare for participants bringing their own subscriptions
+
+Distribute the repository and prerequisite checklist before the event. Each
+student uploads the bundled documents into their own Search service with their
+own tenant identity. Do not prepare a shared Blob account or distribute SAS tokens.
+
+File knowledge sources use a preview API (`2026-08-01-preview`). Pilot the selected
+region and Basic Search tier before delivery. Verify model quota, hosted-agent
+support, permission to assign roles, and reachable Search and Foundry endpoints.
+Direct files remove Blob ingestion setup, not these remaining dependencies.
+
+Run `azd provision knowledge --no-state` twice in the pilot environment and
+confirm the source still contains six files with the same file IDs. Inspect
+retrieval citations for the
+Tokyo neighborhood, transit, and activity documents. Use Module 2's comparison
+prompt and `python scripts/smoke_test.py` for live integration evidence.
+
+Allow students to provision before the event when possible. If they have an older
+Blob-based environment, use the
+[upgrade checklist](troubleshooting.md#upgrade-an-existing-blob-based-environment)
+and retain old resources until the new retrieval path is verified.
 
 ## Suggested runbook
 

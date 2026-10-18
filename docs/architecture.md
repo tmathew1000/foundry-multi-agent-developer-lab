@@ -39,7 +39,8 @@ flowchart TB
     HA --> MCP[Travel MCP service<br/>Azure Container Apps]
     HA --> IQ[Foundry IQ knowledge base]
     IQ --> SRCH[Azure AI Search]
-    SRCH --> GD[Blob destination documents]
+    D -->|Direct file upload| GD[File knowledge source]
+    GD -->|Extract, chunk, embed, index| SRCH
     HA -. OpenTelemetry .-> AI[Application Insights]
     AI --> FP
 
@@ -93,13 +94,19 @@ each specialist in a trace.
 
 All required resources remain in the participant's Azure subscription and
 Microsoft Entra tenant. The synthesized Foundry resources can use a dedicated
-Foundry resource group. Search, Storage, Container Apps, registry, monitoring,
+Foundry resource group. Search, Container Apps, registry, monitoring,
 and supporting identities use the primary `azd` resource group.
 
-The Search service has a managed identity that can read the Blob knowledge
-container and invoke the Foundry chat and embedding deployments. The hosted
-TravelBuddy identity receives query-only access to Search. The deployment
-identity creates knowledge objects and uploads the workshop documents.
+The Search service has a managed identity that can invoke the Foundry chat and
+embedding deployments. The hosted TravelBuddy identity receives query-only
+access to Search. The deployment identity creates knowledge objects and uploads
+the workshop documents directly to Search using Microsoft Entra authentication.
+
+The `travel-destinations-files` file knowledge source uses the
+`2026-08-01-preview` API and minimal text extraction. Search manages the generated
+index and processes each upload synchronously. There is no external Blob account,
+cross-tenant storage grant, or indexer pipeline for this source. Repeat runs
+update existing file IDs; they do not remove obsolete files automatically.
 
 The local provider remains available as a deterministic baseline and recovery
 path. Selecting `foundry_iq` replaces retrieval, not the Hotels or Activities

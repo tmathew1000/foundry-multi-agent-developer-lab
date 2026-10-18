@@ -81,7 +81,12 @@ def main() -> int:
             knowledge_source=values["FOUNDRY_IQ_KNOWLEDGE_SOURCE"],
             api_version=values.get("FOUNDRY_IQ_API_VERSION", "2026-08-01-preview"),
         ).retrieve("Which Tokyo area has evening dining and convenient transit?")
-        print(f"PASS live Foundry IQ retrieval ({len(result.answer)} answer characters)")
+        if not any(citation.get("type") == "file" for citation in result.citations):
+            raise RuntimeError("Foundry IQ retrieval returned no file citations.")
+        print(
+            f"PASS live Foundry IQ retrieval ({len(result.answer)} answer characters, "
+            f"{len(result.citations)} citations)"
+        )
 
         stage = "hosted agent"
         from azure.identity import DefaultAzureCredential

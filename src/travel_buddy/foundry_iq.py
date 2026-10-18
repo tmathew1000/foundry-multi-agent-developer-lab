@@ -77,7 +77,7 @@ class FoundryIQClient:
             "knowledgeSourceParams": [
                 {
                     "knowledgeSourceName": self.knowledge_source,
-                    "kind": "azureBlob",
+                    "kind": "file",
                     "includeReferences": True,
                     "includeReferenceSourceData": True,
                 }
@@ -189,7 +189,12 @@ def _send_json(request: Request, timeout_seconds: float) -> Mapping[str, Any]:
 
 def _parse_retrieval_response(payload: Mapping[str, Any]) -> FoundryIQResult:
     texts: list[str] = []
-    citations: list[dict[str, Any]] = []
+    references = payload.get("references", [])
+    citations: list[dict[str, Any]] = (
+        [reference for reference in references if isinstance(reference, dict)]
+        if isinstance(references, list)
+        else []
+    )
     response_items = payload.get("response", [])
     if isinstance(response_items, list):
         for item in response_items:
@@ -207,7 +212,9 @@ def _parse_retrieval_response(payload: Mapping[str, Any]) -> FoundryIQResult:
                 references = part.get("references", [])
                 if isinstance(references, list):
                     citations.extend(
-                        reference for reference in references if isinstance(reference, dict)
+                        reference
+                        for reference in references
+                        if isinstance(reference, dict) and reference not in citations
                     )
     if not texts:
         raise RuntimeError("Foundry IQ retrieval returned no answer text.")

@@ -21,7 +21,7 @@ class IntegrationFactoryTests(unittest.TestCase):
                 "TRAVEL_BUDDY_GROUNDING_PROVIDER": "foundry_iq",
                 "FOUNDRY_IQ_SEARCH_ENDPOINT": "https://search.example.test",
                 "FOUNDRY_IQ_KNOWLEDGE_BASE": "travel-destinations",
-                "FOUNDRY_IQ_KNOWLEDGE_SOURCE": "travel-destinations-blob",
+                "FOUNDRY_IQ_KNOWLEDGE_SOURCE": "travel-destinations-files",
             }
         )
 

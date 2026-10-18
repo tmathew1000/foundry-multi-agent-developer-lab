@@ -53,7 +53,7 @@ flowchart LR
     A --> M
     HT --> IQ[Foundry IQ knowledge base]
     A --> IQ
-    IQ --> B[Blob destination documents]
+    IQ --> B[Direct file knowledge source]
     H -. traces .-> O[Foundry observability]
     H -. results .-> E[Evaluation suite]
 ```
@@ -61,6 +61,13 @@ flowchart LR
 Four logical Agent Framework agents run behind one Foundry hosted-agent
 deployment. The coordinator routes work to specialists and synthesizes the final
 itinerary.
+
+The knowledge bootstrap uploads six bundled Markdown files directly to Azure AI
+Search using a file knowledge source (preview). Students do not need a dedicated
+Blob Storage account, storage network exemption, or cross-tenant storage access.
+Search, model, hosting, and role-assignment prerequisites still apply. See the
+[prerequisites](docs/prerequisites.md) and
+[existing-environment upgrade steps](docs/troubleshooting.md#upgrade-an-existing-blob-based-environment).
 
 ## Platform responsibilities
 

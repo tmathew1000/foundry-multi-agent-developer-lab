@@ -27,7 +27,7 @@ flowchart LR
     A --> M[Remote travel MCP service]
     A --> L[Local grounding baseline]
     A --> IQ[Foundry IQ knowledge base]
-    IQ --> B[Blob destination documents]
+    IQ --> B[Direct file knowledge source]
 ```
 
 Function tools execute application code. MCP exposes remote capabilities through
@@ -127,9 +127,36 @@ Open `data/foundry-iq/` and compare these document categories:
 * Indoor and evening activities
 * Transportation connections and trade-offs
 
-The `azd up` post-provision hook uploaded these files to Blob Storage and created
-the `travel-destinations` knowledge base. The Search service generated the
-indexing pipeline for the Blob knowledge source.
+The `azd up` post-provision hook created the `travel-destinations-files` file
+knowledge source (preview), uploaded the six Markdown files directly to Search,
+and created the `travel-destinations` knowledge base. Search extracts, chunks,
+embeds, and indexes each file synchronously. No external Blob account, container,
+or indexer schedule is needed. Rerunning the hook lists files and replaces
+existing content by file ID rather than uploading duplicate names.
+
+Open `scripts/bootstrap_foundry_iq.py` and identify:
+
+1. The `file` source kind and `minimal` content extraction setting.
+2. The direct upload and file-ID update operations.
+3. The knowledge base's chat model and the source's embedding model.
+4. The retrieval smoke test that runs after file processing.
+
+To rerun ingestion after editing the destination documents:
+
+```bash
+azd provision knowledge --no-state
+azd env get-values > .env
+```
+
+The hook updates the six current documents. It does not delete remote files when
+you remove or rename a local file. Keep the bundled filenames for the required
+lab; review and delete obsolete files explicitly for optional experiments.
+See [file operation recovery](troubleshooting.md#direct-file-upload-fails)
+if processing or retrieval fails.
+
+The `--no-state` flag forces the knowledge layer and its hook to run even when
+the infrastructure template has not changed. Without it, `azd` can skip the
+layer and leave edited documents unprocessed.
 
 Open `src/travel_buddy/foundry_iq.py` and identify:
 

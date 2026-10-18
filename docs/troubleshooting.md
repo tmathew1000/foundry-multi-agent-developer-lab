@@ -189,42 +189,80 @@ Check:
 * The Search region supports agentic retrieval.
 * The Search service is Basic tier or higher.
 * Both `travel-model` and `travel-embeddings` deployed successfully.
-* The Search managed identity can read Blob Storage.
+* The file knowledge source uses `2026-08-01-preview` and minimal extraction.
 * The Search managed identity has Cognitive Services User on the Foundry account.
 * The deployment identity has Search Service Contributor.
 * Role assignments have finished propagating.
 
-Rerun `azd provision` after correcting the reported issue. The post-provision
-hook updates the same deterministic knowledge source and knowledge base.
+Rerun `azd provision knowledge --no-state` after correcting the reported issue.
+The post-provision hook updates the same deterministic knowledge source and
+knowledge base. The `--no-state` flag prevents `azd` from skipping the unchanged
+layer and its hook.
 
-## Storage network policy blocks upload
+## Direct file upload fails
 
-The bootstrap checks effective storage networking before uploading documents.
-Inspect the deployed state, not only the Bicep template:
+The bootstrap creates the file source, then uploads and indexes each document
+directly in Search. There is no separate ingestion status poll or Blob network
+check. Each operation can take up to 180 seconds; the client allows 240 seconds.
 
-```bash
-STORAGE_ID="$(azd env get-value FOUNDRY_IQ_STORAGE_RESOURCE_ID)"
-az storage account show --ids "$STORAGE_ID" \
-  --query "{publicNetworkAccess:publicNetworkAccess,networkRules:networkRuleSet}"
-```
+Check the HTTP error and confirm:
 
-When public network access is disabled, adding either your workstation or
-Codespace IP to the allowlist does not enable it. Azure Policy can restore the
-disabled setting after a manual update. Ask an administrator to inspect the
-effective policy assignments and approve a time-limited exemption scoped to
-the lab resources if organizational rules allow it. Do not disable or remove
-tenant-wide policy assignments.
+* The API version is `2026-08-01-preview`, not an older preview.
+* Search file knowledge sources are available in your selected region.
+* The Codespace can reach the Search endpoint under effective network rules.
+* Your identity has Search Service Contributor and role propagation has completed.
+* The Search identity can call `travel-embeddings` on the Foundry account.
+* The six Markdown documents exist in `data/foundry-iq/`.
 
-With public access enabled and selected networks configured, allow the current
-runner's outbound IP through the approved process and confirm a supported network
-path for Search ingestion. Uploads also require Storage Blob Data Contributor;
-allow time for role propagation. The blob container stays private, with no
-anonymous access.
+Rerun `azd provision knowledge --no-state` after correcting the cause.
+The hook lists existing files,
+follows pagination, and updates matching names by file ID. Uploading the same
+filename with POST alone creates duplicates; the hook does not do that on reruns.
+An upload with an uncertain response is not automatically retried. Rerunning
+provisioning reconciles any file the service successfully persisted.
 
-If public endpoints cannot be approved, use a sandbox or saved artifacts.
-A network-isolated variant needs a private-network runner, private DNS, Search
-ingestion connectivity, and an adapted bootstrap network check. The default lab
-does not provision that topology.
+The default environment is Codespaces. If you run `azd` from Windows instead,
+its `sh` hook requires a working Bash shell. A WSL startup error occurs before
+the Python bootstrap runs. Use Codespaces or put an installed Git Bash directory
+on the current terminal's PATH, then rerun the command above.
+
+If the hook reports duplicate names, inspect the source's file list in Search
+using the file API, retain the intended version, and delete only confirmed
+duplicates by file ID. Removing or renaming a local document does not delete the
+old remote file. Review optional source changes explicitly.
+
+Do not change tenant-wide policies to bypass a restriction. Use an approved
+sandbox or saved artifacts when Search public endpoints cannot be approved.
+
+## Upgrade an existing Blob-based environment
+
+New environments use direct files by default. For an existing environment:
+
+1. Save your student exercise edits and update your checkout to the direct-file
+   version of the repository.
+2. Run `azd provision knowledge --no-state`. The updated knowledge template no
+   longer provisions a
+   dedicated Blob account or Blob roles. Its post-provision hook creates
+   `travel-destinations-files`, uploads the six files, and repoints the existing
+   `travel-destinations` knowledge base only after file processing succeeds.
+3. Run `azd env get-values > .env` to refresh local values. Restore
+   `TRAVEL_BUDDY_GROUNDING_PROVIDER=foundry_iq` if you are at Module 2 or later.
+   Old `FOUNDRY_IQ_STORAGE_*` and `FOUNDRY_IQ_KNOWLEDGE_CONTAINER` values are unused.
+4. Preserve the grounding-provider change in `azure.yaml`, then run
+   `azd deploy travel-buddy` to deploy the new runtime and file source name.
+   Restart any local host.
+5. Run `python scripts/smoke_test.py` and Module 2's comparison prompt. Confirm
+   cited retrieval before removing anything from the previous ingestion path.
+6. Inventory the old `travel-destinations-blob` source, its generated Search
+   resources, and the old dedicated knowledge storage account. Incremental ARM
+   deployments retain resources omitted from a template. Remove only verified,
+   unused lab resources through your approved cleanup process, or keep them until
+   Module 6 teardown. Do not delete platform storage or shared resources.
+
+Do not change the kind of the old source in place. The new source name separates
+the migration from the previous Blob source. The old runtime uses `azureBlob`
+retrieval parameters, so updating infrastructure without redeploying the runtime
+is not a complete upgrade.
 
 ## Foundry IQ retrieval fails
 

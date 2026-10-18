@@ -49,7 +49,7 @@ class FoundryIQTests(unittest.TestCase):
                                 "references": [
                                     {
                                         "id": "1",
-                                        "sourceName": "travel-destinations-blob",
+                                        "sourceName": "travel-destinations-files",
                                     }
                                 ],
                             }
@@ -62,7 +62,7 @@ class FoundryIQTests(unittest.TestCase):
         client = FoundryIQClient(
             endpoint="https://search.example.test",
             knowledge_base="travel destinations",
-            knowledge_source="travel-destinations-blob",
+            knowledge_source="travel-destinations-files",
             api_version="2026-08-01-preview",
             credential=FakeCredential(),
             sender=send,
@@ -73,7 +73,7 @@ class FoundryIQTests(unittest.TestCase):
         self.assertIn("travel%20destinations/retrieve", captured["url"])
         self.assertEqual("Bearer test-token", captured["headers"]["Authorization"])
         self.assertTrue(captured["payload"]["includeActivity"])
-        self.assertEqual("azureBlob", captured["payload"]["knowledgeSourceParams"][0]["kind"])
+        self.assertEqual("file", captured["payload"]["knowledgeSourceParams"][0]["kind"])
         self.assertEqual("Shinjuku fits the request [1].", result.answer)
         self.assertEqual("1", result.citations[0]["id"])
         self.assertEqual("modelQueryPlanning", result.activity[0]["type"])
@@ -82,7 +82,7 @@ class FoundryIQTests(unittest.TestCase):
         client = FoundryIQClient(
             endpoint="https://search.example.test",
             knowledge_base="travel-destinations",
-            knowledge_source="travel-destinations-blob",
+            knowledge_source="travel-destinations-files",
             api_version="2026-08-01-preview",
             credential=FakeCredential(),
             sender=lambda request, timeout: {"response": []},
@@ -90,6 +90,39 @@ class FoundryIQTests(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "no answer text"):
             client.retrieve("Tokyo")
+
+    def test_client_preserves_top_level_file_references_without_duplicates(self) -> None:
+        reference = {
+            "type": "file",
+            "id": "0",
+            "docName": "tokyo-neighborhoods.md",
+            "citationUrl": "https://search.example.test/indexes/files/docs/file-1",
+            "sourceData": {"snippet": "Shinjuku has evening dining."},
+        }
+        client = FoundryIQClient(
+            endpoint="https://search.example.test",
+            knowledge_base="travel-destinations",
+            knowledge_source="travel-destinations-files",
+            api_version="2026-08-01-preview",
+            credential=FakeCredential(),
+            sender=lambda request, timeout: {
+                "response": [
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Use Shinjuku [0].",
+                                "references": [reference],
+                            }
+                        ]
+                    }
+                ],
+                "references": [reference],
+            },
+        )
+        result = client.retrieve("Tokyo dining")
+        self.assertEqual((reference,), result.citations)
+        self.assertEqual("tokyo-neighborhoods.md", result.citations[0]["docName"])
 
     def test_context_provider_exposes_foundry_iq_retrieval(self) -> None:
         class FakeClient:
@@ -107,7 +140,7 @@ class FoundryIQTests(unittest.TestCase):
         provider = FoundryIQGroundingProvider(
             endpoint="https://search.example.test",
             knowledge_base="travel-destinations",
-            knowledge_source="travel-destinations-blob",
+            knowledge_source="travel-destinations-files",
             client=FakeClient(),
         )
         context = FakeContext()
