@@ -2,7 +2,7 @@
 title: Module 1 - Explore the baseline hosted agent
 description: Inspect, run, and verify a code-first Agent Framework hosted agent
 author: tmathew1000
-ms.date: 2026-09-30
+ms.date: 2026-10-18
 ms.topic: tutorial
 keywords:
   - hosted agent
@@ -75,6 +75,10 @@ After `azd up` completes, import the environment:
 ```bash
 azd env get-values > .env
 ```
+
+The deployment requirements use a regular package install (`.`), not an editable
+install. This keeps the hosted package importable after the remote build directory
+is removed. Local development can still use `pip install -e ".[dev]"`.
 
 Start the local host:
 

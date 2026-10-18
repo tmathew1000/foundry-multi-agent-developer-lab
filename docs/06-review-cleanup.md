@@ -2,7 +2,7 @@
 title: Module 6 - Review and clean up
 description: Confirm the learning outcomes and remove all disposable Azure resources
 author: tmathew1000
-ms.date: 2026-10-17
+ms.date: 2026-10-18
 ms.topic: tutorial
 keywords:
   - cleanup
@@ -42,10 +42,17 @@ flowchart TB
 ```bash
 python -m pytest
 python scripts/verify_module.py all
+python scripts/smoke_test.py
 ```
 
 Do not continue to cleanup until you have recorded any results or screenshots
 you want to retain.
+
+`verify_module.py all` covers configuration/static checks for Modules 0-5.
+Module 6 has no numbered script check and never deletes resources automatically.
+The separate smoke test calls live MCP, Search, and the hosted agent; it can
+incur model charges. Use trace and evaluation evidence for behavior beyond
+service reachability.
 
 ## Required: explain the solution
 
@@ -82,6 +89,7 @@ Capture the resource-group name before teardown:
 
 ```bash
 RESOURCE_GROUP="$(azd env get-value AZURE_RESOURCE_GROUP)"
+SUBSCRIPTION_ID="$(azd env get-value AZURE_SUBSCRIPTION_ID)"
 ```
 
 Run:
@@ -95,10 +103,13 @@ Confirm when prompted.
 Verify the resource group no longer exists:
 
 ```bash
-az group show --name "$RESOURCE_GROUP"
+az group exists --name "$RESOURCE_GROUP" --subscription "$SUBSCRIPTION_ID"
 ```
 
-The expected result is a resource-not-found error.
+The expected result is `false`. An authorization or authentication error does
+not prove deletion. Inspect any extra resource groups or soft-deleted resources
+reported by teardown, and confirm there are no remaining billable lab resources.
+Cost Management data can take time to update.
 
 > [!CAUTION]
 > Closing the Codespace does not remove Azure resources. Verify cleanup to stop

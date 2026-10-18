@@ -13,6 +13,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("module")
     args = parser.parse_args()
+    print("Configuration/static checks only; no live agent or tool calls are made.")
     root = Path(__file__).parents[1]
     try:
         modules = normalize_module_identifier(args.module)
@@ -39,7 +40,7 @@ def main() -> int:
                 print(f"PASS {description}")
         if not module_failed and module != "3":
             descriptions = {
-                "0": "Foundry, model, MCP, and Foundry IQ resources are ready",
+                "0": "Foundry, model, MCP, and Foundry IQ configuration is present",
                 "1": "hosted-agent baseline is valid",
                 "2": "function, MCP, local grounding, and Foundry IQ contracts are valid",
                 "4": "tracing configuration is present",
@@ -59,15 +60,24 @@ def _post_provision_environment_is_ready(root: Path) -> bool:
             text=True,
             timeout=30,
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        print(f"BLOCKER azd environment: {exc}", file=sys.stderr)
         return False
     if completed.returncode != 0:
+        print(
+            f"BLOCKER azd environment: {completed.stderr.strip() or 'Select an azd environment.'}",
+            file=sys.stderr,
+        )
         return False
     try:
         values = parse_azd_env_values(completed.stdout)
-    except ValueError:
+    except ValueError as exc:
+        print(f"BLOCKER azd environment: {exc}", file=sys.stderr)
         return False
-    return not any(check.blocking for check in post_provision_checks(values))
+    blockers = [check for check in post_provision_checks(values) if check.blocking]
+    for check in blockers:
+        print(f"BLOCKER {check.name}: {check.detail}", file=sys.stderr)
+    return not blockers
 
 
 if __name__ == "__main__":

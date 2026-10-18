@@ -14,6 +14,9 @@ param principalId string
 @description('The full ARM resource ID of the Microsoft Foundry project.')
 param projectResourceId string
 
+@description('Chat deployment name, matching the ai-project deployment in azure.yaml.')
+param chatDeploymentName string = 'travel-model'
+
 var projectIdParts = split(projectResourceId, '/')
 var projectSubscriptionId = projectIdParts[2]
 var projectResourceGroupName = projectIdParts[4]
@@ -169,7 +172,8 @@ resource foundryRuntimeQueriesSearch 'Microsoft.Authorization/roleAssignments@20
 }
 
 output FOUNDRY_IQ_API_VERSION string = '2026-08-01-preview'
-output FOUNDRY_IQ_CHAT_DEPLOYMENT_NAME string = 'travel-model'
+output AZURE_AI_MODEL_DEPLOYMENT_NAME string = chatDeploymentName
+output FOUNDRY_IQ_CHAT_DEPLOYMENT_NAME string = chatDeploymentName
 output FOUNDRY_IQ_EMBEDDING_DEPLOYMENT_NAME string = 'travel-embeddings'
 output FOUNDRY_IQ_KNOWLEDGE_BASE string = knowledgeBaseName
 output FOUNDRY_IQ_KNOWLEDGE_CONTAINER string = knowledgeContainer.name

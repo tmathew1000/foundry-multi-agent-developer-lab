@@ -77,7 +77,7 @@ class FoundryIQClient:
             "knowledgeSourceParams": [
                 {
                     "knowledgeSourceName": self.knowledge_source,
-                    "kind": "searchIndex",
+                    "kind": "azureBlob",
                     "includeReferences": True,
                     "includeReferenceSourceData": True,
                 }

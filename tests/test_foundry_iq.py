@@ -73,6 +73,7 @@ class FoundryIQTests(unittest.TestCase):
         self.assertIn("travel%20destinations/retrieve", captured["url"])
         self.assertEqual("Bearer test-token", captured["headers"]["Authorization"])
         self.assertTrue(captured["payload"]["includeActivity"])
+        self.assertEqual("azureBlob", captured["payload"]["knowledgeSourceParams"][0]["kind"])
         self.assertEqual("Shinjuku fits the request [1].", result.answer)
         self.assertEqual("1", result.citations[0]["id"])
         self.assertEqual("modelQueryPlanning", result.activity[0]["type"])
