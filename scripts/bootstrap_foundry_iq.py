@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import time
 from collections.abc import Mapping
@@ -65,6 +66,7 @@ class BootstrapSettings:
 def main() -> int:
     try:
         settings = BootstrapSettings.from_env()
+        _check_storage_network(settings)
         credential = _default_credential()
         _upload_documents(settings, credential)
         token = credential.get_token(SEARCH_SCOPE).token
@@ -95,11 +97,6 @@ def main() -> int:
 
 
 def build_knowledge_source_payload(settings: BootstrapSettings) -> dict[str, Any]:
-    model_parameters = {
-        "resourceUri": settings.model_resource_uri,
-        "deploymentId": settings.chat_deployment,
-        "modelName": "gpt-5.4-mini",
-    }
     embedding_parameters = {
         "resourceUri": settings.model_resource_uri,
         "deploymentId": settings.embedding_deployment,
@@ -119,10 +116,6 @@ def build_knowledge_source_payload(settings: BootstrapSettings) -> dict[str, Any
                 "networkAccessMode": "public",
                 "identity": None,
                 "disableImageVerbalization": True,
-                "chatCompletionModel": {
-                    "kind": "azureOpenAI",
-                    "azureOpenAIParameters": model_parameters,
-                },
                 "embeddingModel": {
                     "kind": "azureOpenAI",
                     "azureOpenAIParameters": embedding_parameters,
@@ -184,7 +177,7 @@ def smoke_test_payload(settings: BootstrapSettings) -> dict[str, Any]:
         "knowledgeSourceParams": [
             {
                 "knowledgeSourceName": settings.knowledge_source,
-                "kind": "searchIndex",
+                "kind": "azureBlob",
                 "includeReferences": True,
                 "includeReferenceSourceData": True,
             }
@@ -199,6 +192,52 @@ def _default_credential() -> Any:
     except ImportError as exc:
         raise RuntimeError("Install project dependencies before provisioning Foundry IQ.") from exc
     return DefaultAzureCredential()
+
+
+def _check_storage_network(settings: BootstrapSettings) -> None:
+    try:
+        completed = subprocess.run(
+            [
+                "az",
+                "storage",
+                "account",
+                "show",
+                "--ids",
+                settings.storage_resource_id,
+                "--query",
+                "{access:publicNetworkAccess,rules:networkRuleSet}",
+                "--output",
+                "json",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=60,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError(f"Cannot check storage networking with Azure CLI: {exc}") from exc
+    if completed.returncode:
+        raise RuntimeError(f"Cannot check storage networking: {completed.stderr.strip()}")
+    try:
+        network = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("Storage network check returned invalid JSON.") from exc
+    if not isinstance(network, dict):
+        raise RuntimeError("Storage network check returned a non-object response.")
+    if network.get("access") != "Enabled":
+        raise RuntimeError(
+            "Storage public network access is not Enabled. Codespace uploads cannot use "
+            "an IP allowlist while public access is disabled. Ask your administrator for "
+            "an approved lab-scoped policy exemption or run from an approved private "
+            "network with working private DNS. See docs/troubleshooting.md."
+        )
+    rules = network.get("rules")
+    if isinstance(rules, dict) and rules.get("defaultAction") == "Deny":
+        print(
+            "Storage uses selected networks. Ensure this runner's outbound IP is allowed; "
+            "the Search ingestion identity also needs an approved network path.",
+            file=sys.stderr,
+        )
 
 
 def _upload_documents(settings: BootstrapSettings, credential: Any) -> None:
@@ -231,7 +270,11 @@ def _upload_documents(settings: BootstrapSettings, credential: Any) -> None:
                 break
             except HttpResponseError as exc:
                 if exc.status_code not in {403, 404, 409, 429} or attempt == 6:
-                    raise RuntimeError(f"Failed to upload {document.name}: {exc}") from exc
+                    raise RuntimeError(
+                        f"Failed to upload {document.name}: {exc}. Check Storage Blob Data "
+                        "Contributor propagation and effective storage network rules, including "
+                        "Azure Policy. See docs/troubleshooting.md."
+                    ) from exc
                 time.sleep(10)
     print(f"Uploaded {len(documents)} Foundry IQ knowledge documents.")
 
@@ -247,7 +290,7 @@ def _put_search_object(
         f"{settings.search_endpoint.rstrip('/')}/{collection}/{quote(name, safe='')}"
         f"?api-version={quote(settings.api_version, safe='-')}"
     )
-    return _request_json("PUT", url, token, payload)
+    return _request_json("PUT", url, token, payload, allow_empty=True)
 
 
 def _wait_for_ingestion(
@@ -264,18 +307,19 @@ def _wait_for_ingestion(
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         status = _request_json("GET", url, token)
-        status_text = json.dumps(status).casefold()
-        if any(value in status_text for value in ('"status": "error"', '"status":"error"')):
-            raise RuntimeError(f"Foundry IQ ingestion failed: {json.dumps(status)}")
+        last = status.get("lastSynchronizationState")
+        current = status.get("currentSynchronizationState")
+        states = [state for state in (status, last, current) if isinstance(state, dict)]
         if any(
-            value in status_text
-            for value in (
-                '"status": "success"',
-                '"status":"success"',
-                '"status": "completed"',
-                '"status":"completed"',
-            )
+            state.get("errors")
+            or state.get("itemsUpdatesFailed")
+            or str(state.get("status", "")).casefold() in {"error", "failed"}
+            for state in states
         ):
+            raise RuntimeError(f"Foundry IQ ingestion failed: {json.dumps(status)}")
+        completed_sync = isinstance(last, dict) and last.get("endTime") and current is None
+        legacy_complete = str(status.get("status", "")).casefold() in {"success", "completed"}
+        if completed_sync or legacy_complete:
             print("Foundry IQ document ingestion completed.")
             return
         time.sleep(10)
@@ -300,6 +344,8 @@ def _request_json(
     url: str,
     token: str,
     payload: Mapping[str, Any] | None = None,
+    *,
+    allow_empty: bool = False,
 ) -> Mapping[str, Any]:
     data = None if payload is None else json.dumps(payload).encode("utf-8")
     request = Request(
@@ -330,7 +376,7 @@ def _request_json(
                 ) from exc
             time.sleep(10)
     try:
-        result = json.loads(raw)
+        result = {} if allow_empty and not raw.strip() else json.loads(raw)
     except json.JSONDecodeError as exc:
         raise RuntimeError(f"{method} {url} returned invalid JSON.") from exc
     if not isinstance(result, dict):

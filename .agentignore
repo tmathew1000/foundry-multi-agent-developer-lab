@@ -1,0 +1,12 @@
+.git/
+.azure/
+.env
+.env.*
+.venv/
+.foundry/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.egg-info/
+build/
+dist/

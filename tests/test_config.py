@@ -8,6 +8,14 @@ from travel_buddy.config import (
 
 
 class TravelBuddySettingsTests(unittest.TestCase):
+    def test_project_endpoint_aliases_match_preflight(self) -> None:
+        for name in ("AZURE_AI_PROJECT_ENDPOINT", "AZURE_AIPROJECT_ENDPOINT"):
+            with self.subTest(name=name):
+                settings = TravelBuddySettings.from_env(
+                    {name: "https://example.test/api/projects/lab"}
+                )
+                self.assertEqual("https://example.test/api/projects/lab", settings.project_endpoint)
+
     def test_offline_settings_do_not_require_credentials_until_cloud_build(self) -> None:
         settings = TravelBuddySettings.from_env({})
 

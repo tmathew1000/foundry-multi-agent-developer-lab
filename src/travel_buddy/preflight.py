@@ -153,9 +153,10 @@ def caveat_checks() -> list[PreflightCheck]:
             "regional-quota",
             "CAVEAT",
             (
-                "Model and Container Apps quota is subscription- and region-specific; "
-                "Foundry IQ also requires an Azure AI Search region that supports agentic "
-                "retrieval. azd provisioning remains the authoritative capacity check."
+                "This preflight does not query live quota or regional capacity. Model and "
+                "Container Apps quota and Search capacity vary by subscription and region. "
+                "Foundry IQ requires Search agentic retrieval support; even supported regions "
+                "can be full. Provisioning is the authoritative allocation check."
             ),
         ),
         PreflightCheck(
@@ -163,7 +164,9 @@ def caveat_checks() -> list[PreflightCheck]:
             "CAVEAT",
             (
                 "Azure Policy can deny resource types, SKUs, regions, public access, "
-                "or role assignments even when login and subscription checks pass."
+                "or role assignments even when login and subscription checks pass. "
+                "The knowledge bootstrap checks effective storage public access before upload; "
+                "Codespace IP rules do not override disabled public access."
             ),
         ),
     ]

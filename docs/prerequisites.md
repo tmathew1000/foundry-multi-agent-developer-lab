@@ -2,7 +2,7 @@
 title: Prerequisites and subscription checks
 description: Required skills, Azure permissions, quotas, policies, and workstation setup for the lab
 author: tmathew1000
-ms.date: 2026-10-17
+ms.date: 2026-10-18
 ms.topic: reference
 keywords:
   - prerequisites
@@ -95,15 +95,15 @@ The default logical deployments are `travel-model` for chat and
 selected by the infrastructure configuration.
 
 Availability in the Foundry catalog does not guarantee capacity in your
-subscription. The preflight checks:
+subscription. Preflight verifies local tooling, login, and subscription state.
+It does not query live model quota, Search capacity, or hosted-agent regional
+availability. Its quota and policy messages are caveats, not successful capacity
+checks. Review these constraints with your administrator before allocating resources.
 
-* Region support
-* Model quota
-* Required inference capabilities
-* Hosted-agent compatibility
-
-If the primary region lacks capacity, use the documented secondary region. Do
-not select an untested model during the lab.
+Candidate regions include `eastus2`, `northcentralus`, and `westus3`, subject to
+current model, hosted-agent, and Search agentic-retrieval support. No candidate
+guarantees capacity. Use the recovery steps in [Troubleshooting](troubleshooting.md)
+if allocation fails. Do not substitute an untested model during the lab.
 
 ## Policies that commonly block the lab
 
@@ -119,6 +119,23 @@ The lab cannot deploy normally when policy:
 
 If your organization enforces these controls, use a sandbox subscription or the
 fallback artifacts. The four-hour lab does not configure private networking.
+
+### Storage access from Codespaces
+
+The knowledge bootstrap uploads six Markdown files from your Codespace to a
+private blob container using your signed-in identity. The container does not
+allow anonymous access, but the default lab requires a reachable public storage
+endpoint. Search subsequently reads those blobs using its managed identity.
+
+Storage `publicNetworkAccess=Disabled` blocks Codespace uploads even when an IP
+allowlist contains your address. Your workstation and Codespace can also have
+different outbound IPs. An administrator must approve any policy exemption,
+scoped to the disposable lab resources. Do not disable tenant-wide policies.
+See [storage network recovery](troubleshooting.md#storage-network-policy-blocks-upload).
+
+A private-network deployment requires a network-connected runner, private DNS,
+and a supported network path for Search ingestion. Those changes are outside
+the default lab; use an approved sandbox or saved artifacts instead.
 
 ## Expected resources
 

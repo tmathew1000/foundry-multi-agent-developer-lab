@@ -28,6 +28,11 @@ jobs:
       - name: Run tests
         run: python -m pytest
 
+      - name: Verify portable hosted package
+        run: |
+          python -m pip install --no-deps --target .foundry/package-test .
+          python -c "import sys; from pathlib import Path; p = Path('.foundry/package-test').resolve(); sys.path.insert(0, str(p)); import travel_buddy.hosting as h; assert Path(h.__file__).is_relative_to(p)"
+
       - name: Lint Python
         run: |
           python -m ruff check src scripts tests checkpoints

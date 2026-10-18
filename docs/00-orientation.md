@@ -2,7 +2,7 @@
 title: Module 0 - Orientation and preflight
 description: Validate the subscription, start provisioning, and understand the lab architecture
 author: tmathew1000
-ms.date: 2026-10-17
+ms.date: 2026-10-18
 ms.topic: tutorial
 keywords:
   - preflight
@@ -156,12 +156,22 @@ python scripts/verify_module.py 0
 Expected result:
 
 ```text
-PASS Module 0: local tools and deployed Azure context are ready
+PASS Module 0: Foundry, model, MCP, and Foundry IQ configuration is present
 ```
 
 This verification reads the active `azd` environment and requires the Foundry
 project endpoint, model deployment, remote MCP endpoint, Search endpoint,
 knowledge source, and knowledge base.
+
+These are configuration/static checks, not live service tests. To test the
+remote MCP tool, Foundry IQ retrieval, and a completed hosted-agent response, run:
+
+```bash
+python scripts/smoke_test.py
+```
+
+This invokes deployed services and can incur model charges. A successful
+deployment or static check alone does not prove the agent can answer.
 
 ## Troubleshooting
 
@@ -175,24 +185,30 @@ If `azd up` reports that `infra/main.bicep` is missing, pull the latest
 repository changes. Confirm that `azure.yaml` defines the `foundry` and `mcp`
 infrastructure layers, then rerun `azd up` with the existing environment.
 
-If `azd up` reports `AKSCapacityHeavyUsage` or that cluster creation is
-unavailable, select an alternate supported region and rerun provisioning. For
-example:
+If `azd up` reports `AKSCapacityHeavyUsage`, Search
+`InsufficientResourcesAvailable`, or unavailable cluster creation, review
+current service support and capacity. Candidate alternatives include `eastus2`,
+`northcentralus`, and `westus3`; none guarantees availability.
+For a fresh environment, select an approved supported region:
 
 ```bash
-azd env set AZURE_LOCATION eastus2
+azd env set AZURE_LOCATION northcentralus
 azd up
 ```
 
 If model capacity is unavailable, select an alternate region that supports the
 configured model and rerun provisioning. Do not substitute an untested model.
 
-If verification cannot resolve the model deployment, pull the latest repository
-changes and confirm that `AI_PROJECT_DEPLOYMENTS` appears in `azd env
-get-values`. Then redeploy the hosted agent and verify again:
+For an existing partially deployed environment, follow the
+[region-change recovery](troubleshooting.md#region-change-fails-with-invaliddeploymentlocation)
+before rerunning provisioning.
+
+The knowledge infrastructure outputs `AZURE_AI_MODEL_DEPLOYMENT_NAME` for the
+chat deployment. If verification cannot resolve it in an older environment,
+select the chat deployment explicitly, not `travel-embeddings`:
 
 ```bash
-azd deploy travel-buddy
+azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME travel-model
 python scripts/verify_module.py 0
 ```
 
@@ -211,6 +227,7 @@ Continue when:
 * Preflight reports ready or you have selected the fallback path
 * Provisioning and deployment have completed successfully
 * Module 0 verification passes
+* The live smoke test returns an agent answer
 * You can explain Foundry, Foundry IQ, and Agent Framework responsibilities
 
 Next: [Module 1 - Explore the baseline hosted agent](01-baseline.md).

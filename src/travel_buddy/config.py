@@ -47,7 +47,8 @@ def resolve_model_deployment(values: Mapping[str, str]) -> str | None:
     if len(names) > 1:
         raise ConfigurationError(
             "AZURE_AI_MODEL_DEPLOYMENT_NAME is required when AI_PROJECT_DEPLOYMENTS "
-            "contains multiple deployments."
+            "contains multiple deployments. Select the chat deployment with "
+            "'azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME <chat-deployment-name>'."
         )
     return None
 
@@ -98,7 +99,11 @@ class TravelBuddySettings:
     def from_env(cls, env: Mapping[str, str] | None = None) -> TravelBuddySettings:
         values = os.environ if env is None else env
         settings = cls(
-            project_endpoint=values.get("FOUNDRY_PROJECT_ENDPOINT"),
+            project_endpoint=(
+                values.get("FOUNDRY_PROJECT_ENDPOINT")
+                or values.get("AZURE_AI_PROJECT_ENDPOINT")
+                or values.get("AZURE_AIPROJECT_ENDPOINT")
+            ),
             model_deployment=resolve_model_deployment(values),
             mcp_url=values.get("TRAVEL_BUDDY_MCP_URL"),
             app_insights_connection_string=values.get("APPLICATIONINSIGHTS_CONNECTION_STRING"),
