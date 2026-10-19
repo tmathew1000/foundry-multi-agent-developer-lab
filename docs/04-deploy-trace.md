@@ -2,7 +2,7 @@
 title: Module 4 - Deploy and diagnose with tracing
 description: Deploy the multi-agent version and inspect its distributed execution trace
 author: tmathew1000
-ms.date: 2026-10-17
+ms.date: 2026-10-19
 ms.topic: tutorial
 keywords:
   - deployment
@@ -54,6 +54,47 @@ azd deploy
 Wait until the hosted-agent status reports ready. A deployment that was accepted
 but is still starting is not ready for invocation.
 
+## Required: connect Application Insights to Foundry
+
+The lab provisions an Application Insights resource and configures the hosted
+application to export telemetry through `APPLICATIONINSIGHTS_CONNECTION_STRING`.
+The Foundry project also needs a connection to that resource so you can view
+traces in the portal. Creating the resource and configuring telemetry export do
+not, by themselves, establish this portal connection.
+
+Find `AZURE_APPLICATION_INSIGHTS_NAME` in the `.env` file imported earlier in the
+lab. The resource name follows the pattern `appi-mcp-<resource token>`. Despite
+the `mcp` name, the hosted TravelBuddy application also exports telemetry to
+this resource. Use this existing resource rather than creating a second one.
+
+In the new Microsoft Foundry portal:
+
+1. Open the same project that hosts your deployed TravelBuddy agent.
+2. In the left navigation, select **Agents**, then select **Traces** at the top.
+3. Select **Connect**.
+4. Choose the subscription and resource group containing the lab's Application
+   Insights resource, then select the resource matching
+   `AZURE_APPLICATION_INSIGHTS_NAME`.
+5. Select **Connect** and wait for the success confirmation.
+
+If the **Connect** button is not visible, use **Manage → Project details →
+Connected resources → Add connection → Application Insights**, then select the
+same existing resource. If the project already has a connection, confirm that
+it points to the resource used by the application.
+
+You need permission to add the project connection and query the selected
+Application Insights resource. If access is denied, ask your administrator for
+the appropriate access. Querying telemetry requires **Log Analytics Reader**.
+If the underlying Log Analytics tables are protected, you may also need
+**Privileged Monitoring Data Reader**.
+
+Connecting the existing resource does not require redeploying the agent.
+Generate a new invocation after connecting, as described below, and allow a few
+minutes for telemetry ingestion.
+
+See [Set up tracing in Microsoft Foundry](https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-setup)
+for the portal connection procedure and access requirements.
+
 ## Required: generate a trace
 
 Invoke the deployed agent with:
@@ -70,9 +111,13 @@ Save the response ID printed by the invocation helper.
 In Microsoft Foundry:
 
 1. Open the project.
-2. Open observability and traces.
+2. Open **Agents → Traces**.
 3. Filter to the TravelBuddy agent and recent time range.
 4. Open the trace matching the saved response ID.
+
+If the invocation is not listed immediately, wait a few minutes and refresh.
+Confirm that the time range includes the invocation and that the project is
+connected to the Application Insights resource selected above.
 
 Find:
 
@@ -152,6 +197,7 @@ would reduce latency without reducing answer quality.
 Continue when:
 
 * The candidate version is deployed
+* The Foundry project is connected to the lab's Application Insights resource
 * You have followed one complete trace
 * You have diagnosed the unsupported-currency failure
 
