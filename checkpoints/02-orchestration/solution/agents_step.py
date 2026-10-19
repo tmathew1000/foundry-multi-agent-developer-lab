@@ -25,7 +25,13 @@ def coordinator_spec() -> AgentSpec:
         instructions=(
             "Coordinate Flights, Hotels, and Activities. Ask for missing trip constraints, "
             "delegate only relevant work, reconcile prices, and produce a concise itinerary "
-            "with assumptions and a USD total. Never claim a booking was completed."
+            "with assumptions and a USD total. Never claim a booking was completed. "
+            "Delegate all requested currency conversions to Flights, including standalone "
+            "conversions and hotel-budget conversions, even when no flight search is needed. "
+            "Do not terminate or answer a conversion request before Flights has called "
+            "convert_currency and returned its result. Never invent exchange rates or substitute "
+            "estimates for tool results. If the tool returns unsupported_currency, preserve "
+            "the returned limitation without a numeric conversion."
         ),
         tools=(estimate_trip_total,),
     )
@@ -42,12 +48,20 @@ def specialist_specs(
     return (
         AgentSpec(
             name="Flights",
-            description="Finds and compares flight options.",
+            description=(
+                "Finds and compares flight options and performs currency conversions, "
+                "including standalone and hotel-budget conversions, using convert_currency."
+            ),
             instructions=(
-                "Use the flight search function for flight requests and the currency function "
-                "for price conversions. Return at most three flight options, state route, date, "
+                "Use the flight search function for flight requests. "
+                "Call convert_currency for every currency conversion request, including "
+                "standalone and hotel-budget conversions, even if a currency may be unsupported. "
+                "Do not require a flight search to perform a conversion. "
+                "Return at most three flight options, state route, date, "
                 "stops, price, and tradeoffs. Report unsupported currencies exactly as returned "
-                "by the tool. Do not invent availability or exchange rates."
+                "by the tool. If status is unsupported_currency, preserve the returned "
+                "limitation without a numeric conversion or estimated rate. "
+                "Do not invent availability or exchange rates."
             ),
             tools=(search_flights, convert_currency),
         ),

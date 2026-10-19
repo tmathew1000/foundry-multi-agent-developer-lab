@@ -173,13 +173,20 @@ assuming the operation did not run.
 
 ## Required: diagnose the controlled failure
 
-In the same VS Code terminal at the repository root, invoke the remote hosted
-agent:
+This controlled failure targets the deployed Foundry-hosted agent, not a local
+Agent Inspector session. If you changed the routing instructions or restored a
+checkpoint after deployment, redeploy the updated code before hosted testing
+using the deployment steps above. Local code edits do not update the hosted
+agent.
+
+In a VS Code terminal at the repository root, invoke the remote hosted agent
+with a fresh session and conversation so earlier requests do not affect this
+test:
 
 <!-- markdownlint-disable MD013 -->
 
 ```bash
-azd ai agent invoke travel-buddy 'Convert my Tokyo hotel budget of 200 CAD per night to JPY.'
+azd ai agent invoke travel-buddy --new-session --new-conversation 'Convert my Tokyo hotel budget of 200 CAD per night to JPY.'
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -191,6 +198,24 @@ described above. Allow a few minutes for ingestion, then inspect this
 invocation's tool spans.
 
 The starter currency tool intentionally supports a limited set of currencies.
+The intended tool result has `status="unsupported_currency"`, with
+`output_amount` and `rate` set to `null`. This is a structured limitation, not
+necessarily an exception or a failed CLI command.
+
+Inspect the actual trace for this execution sequence:
+
+```text
+Coordinator → Flights → convert_currency → unsupported_currency
+```
+
+Confirm that Flights called `convert_currency` with the requested amount and
+currency codes, and that the final response accurately reports the returned
+limitation without inventing a rate or numeric conversion. These steps may be
+nested spans or tool-result attributes rather than separate trace entries.
+A numeric estimate without a currency-tool call is a routing failure, not
+successful completion. If the necessary spans or results are not visible,
+record that the hosted behavior remains unverified.
+
 Use the trace to answer:
 
 1. Did routing select the expected specialist?
@@ -200,7 +225,10 @@ Use the trace to answer:
 5. Did the final response represent the limitation accurately?
 
 The correct diagnosis is based on the tool span, not on the wording of the final
-answer alone.
+answer alone. Static instruction tests do not prove live model routing.
+Prompt-based routing improvements are not deterministic guarantees; verify
+the behavior with a fresh hosted trace after redeployment before claiming the
+routing gap is fixed.
 
 ## Why this matters
 
