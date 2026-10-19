@@ -120,22 +120,29 @@ The lab cannot deploy normally when policy:
 If your organization enforces these controls, use a sandbox subscription or the
 fallback artifacts. The four-hour lab does not configure private networking.
 
-### Storage access from Codespaces
+### Direct file knowledge access from Codespaces
 
-The knowledge bootstrap uploads six Markdown files from your Codespace to a
-private blob container using your signed-in identity. The container does not
-allow anonymous access, but the default lab requires a reachable public storage
-endpoint. Search subsequently reads those blobs using its managed identity.
+The knowledge bootstrap uploads six bundled Markdown files directly to your
+Azure AI Search service using your signed-in identity. Students from different
+tenants ingest their own copy into their own subscription. No organizer-hosted
+Blob account, SAS token, cross-tenant storage grant, or anonymous access is needed.
 
-Storage `publicNetworkAccess=Disabled` blocks Codespace uploads even when an IP
-allowlist contains your address. Your workstation and Codespace can also have
-different outbound IPs. An administrator must approve any policy exemption,
-scoped to the disposable lab resources. Do not disable tenant-wide policies.
-See [storage network recovery](troubleshooting.md#storage-network-policy-blocks-upload).
+File knowledge sources are a preview feature. The lab uses API
+`2026-08-01-preview`, minimal text extraction, and Basic Search. Confirm support
+in the selected region before the event. Search must be reachable from Codespaces;
+the deployment identity needs Search Service Contributor for knowledge objects
+and file operations, plus Search Index Data Reader for retrieval. Search's managed
+identity needs Cognitive Services User on the Foundry account for embedding and
+chat inference. The templates assign these roles.
 
-A private-network deployment requires a network-connected runner, private DNS,
-and a supported network path for Search ingestion. Those changes are outside
-the default lab; use an approved sandbox or saved artifacts instead.
+Removing Blob ingestion avoids its network-policy and role-propagation
+dependencies, not all Azure policy restrictions. Foundry, Search, and hosted-agent
+network requirements remain. Private networking is outside the default lab;
+use an approved sandbox or saved artifacts when public endpoints are denied.
+Other platform resources may still use supporting storage.
+
+See [file operation recovery](troubleshooting.md#direct-file-upload-fails) and the
+[Microsoft file knowledge source documentation](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-file).
 
 ## Expected resources
 
@@ -150,7 +157,7 @@ The automated setup creates a disposable environment that includes:
 * Application Insights and Log Analytics
 * Supporting storage, registry, and managed identities
 * One Basic Azure AI Search service
-* One Foundry IQ knowledge source and knowledge base
+* One Foundry IQ file knowledge source and knowledge base
 
 ## Cost assumption
 

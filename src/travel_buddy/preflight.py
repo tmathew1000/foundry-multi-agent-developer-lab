@@ -165,8 +165,8 @@ def caveat_checks() -> list[PreflightCheck]:
             (
                 "Azure Policy can deny resource types, SKUs, regions, public access, "
                 "or role assignments even when login and subscription checks pass. "
-                "The knowledge bootstrap checks effective storage public access before upload; "
-                "Codespace IP rules do not override disabled public access."
+                "Direct file knowledge uploads require a reachable Search endpoint, not a "
+                "Blob Storage endpoint. Search and Foundry network policies still apply."
             ),
         ),
     ]

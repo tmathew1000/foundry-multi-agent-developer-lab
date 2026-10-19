@@ -32,7 +32,7 @@ flowchart TB
     A --> MCP
     HT --> IQ[Foundry IQ]
     A --> IQ
-    IQ --> B[Blob knowledge]
+    IQ --> B[Direct file knowledge]
     H -. telemetry .-> T[Tracing]
     H -. quality .-> E[Evaluation]
 ```
@@ -77,8 +77,8 @@ Confirm that you can answer:
 | Function tool | Deterministic currency operation |
 | MCP | Remote reusable travel operations |
 | Foundry IQ | Managed destination knowledge with citations |
-| Azure AI Search | Agentic retrieval and generated indexing pipeline |
-| Blob Storage | Curated workshop knowledge documents |
+| Azure AI Search | Agentic retrieval and a managed index |
+| File knowledge source | Directly uploaded, curated workshop documents |
 | Managed identity | Authentication without API keys |
 | Tracing | Runtime diagnosis |
 | Evaluation | Baseline and candidate quality comparison |
@@ -110,6 +110,13 @@ The expected result is `false`. An authorization or authentication error does
 not prove deletion. Inspect any extra resource groups or soft-deleted resources
 reported by teardown, and confirm there are no remaining billable lab resources.
 Cost Management data can take time to update.
+
+If you upgraded from the Blob-based version, also review the old dedicated
+knowledge storage account and any superseded Search source, generated indexer,
+data source, skillset, or index. Incremental provisioning does not delete those
+resources. See the [upgrade checklist](troubleshooting.md#upgrade-an-existing-blob-based-environment).
+Pilot knowledge bases and sources in the lab Search service are removed when
+that Search service is deleted. Do not delete resources used by another workload.
 
 > [!CAUTION]
 > Closing the Codespace does not remove Azure resources. Verify cleanup to stop

@@ -50,7 +50,7 @@ class PreflightTests(unittest.TestCase):
                 "SERVICE_MCP_SERVER_URI": "https://mcp.example.test",
                 "FOUNDRY_IQ_SEARCH_ENDPOINT": "https://search.example.test",
                 "FOUNDRY_IQ_KNOWLEDGE_BASE": "travel-destinations",
-                "FOUNDRY_IQ_KNOWLEDGE_SOURCE": "travel-destinations-blob",
+                "FOUNDRY_IQ_KNOWLEDGE_SOURCE": "travel-destinations-files",
             }
         )
 
@@ -64,7 +64,7 @@ class PreflightTests(unittest.TestCase):
                 "SERVICE_MCP_SERVER_URI": "https://mcp.example.test",
                 "FOUNDRY_IQ_SEARCH_ENDPOINT": "https://search.example.test",
                 "FOUNDRY_IQ_KNOWLEDGE_BASE": "travel-destinations",
-                "FOUNDRY_IQ_KNOWLEDGE_SOURCE": "travel-destinations-blob",
+                "FOUNDRY_IQ_KNOWLEDGE_SOURCE": "travel-destinations-files",
             }
         )
 

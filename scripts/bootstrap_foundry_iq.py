@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
 import sys
 import time
 from collections.abc import Mapping
@@ -22,9 +21,6 @@ class BootstrapSettings:
     api_version: str
     knowledge_source: str
     knowledge_base: str
-    storage_account: str
-    storage_resource_id: str
-    container: str
     model_resource_uri: str
     chat_deployment: str
     embedding_deployment: str
@@ -43,9 +39,6 @@ class BootstrapSettings:
             "FOUNDRY_IQ_API_VERSION": "api_version",
             "FOUNDRY_IQ_KNOWLEDGE_SOURCE": "knowledge_source",
             "FOUNDRY_IQ_KNOWLEDGE_BASE": "knowledge_base",
-            "FOUNDRY_IQ_STORAGE_ACCOUNT_NAME": "storage_account",
-            "FOUNDRY_IQ_STORAGE_RESOURCE_ID": "storage_resource_id",
-            "FOUNDRY_IQ_KNOWLEDGE_CONTAINER": "container",
             "FOUNDRY_IQ_MODEL_RESOURCE_URI": "model_resource_uri",
             "FOUNDRY_IQ_CHAT_DEPLOYMENT_NAME": "chat_deployment",
             "FOUNDRY_IQ_EMBEDDING_DEPLOYMENT_NAME": "embedding_deployment",
@@ -66,9 +59,7 @@ class BootstrapSettings:
 def main() -> int:
     try:
         settings = BootstrapSettings.from_env()
-        _check_storage_network(settings)
         credential = _default_credential()
-        _upload_documents(settings, credential)
         token = credential.get_token(SEARCH_SCOPE).token
         _put_search_object(
             settings,
@@ -77,7 +68,7 @@ def main() -> int:
             settings.knowledge_source,
             build_knowledge_source_payload(settings),
         )
-        _wait_for_ingestion(settings, token)
+        _upload_documents(settings, token)
         _put_search_object(
             settings,
             token,
@@ -88,7 +79,13 @@ def main() -> int:
         result = _retrieve(settings, token, smoke_test_payload(settings))
         if not _response_has_text(result):
             raise RuntimeError("Foundry IQ smoke test returned no answer text.")
-    except (RuntimeError, ValueError) as exc:
+        references = result.get("references")
+        if not isinstance(references, list) or not any(
+            isinstance(reference, dict) and reference.get("type") == "file"
+            for reference in references
+        ):
+            raise RuntimeError("Foundry IQ smoke test returned no file citations.")
+    except (RuntimeError, ValueError, OSError) as exc:
         print(f"Foundry IQ bootstrap failed: {exc}", file=sys.stderr)
         return 1
 
@@ -104,24 +101,16 @@ def build_knowledge_source_payload(settings: BootstrapSettings) -> dict[str, Any
     }
     return {
         "name": settings.knowledge_source,
-        "kind": "azureBlob",
+        "kind": "file",
         "description": ("Curated TravelBuddy neighborhood, activity, and transit guidance."),
         "encryptionKey": None,
-        "azureBlobParameters": {
-            "connectionString": f"ResourceId={settings.storage_resource_id}",
-            "containerName": settings.container,
-            "folderPath": None,
-            "isADLSGen2": False,
+        "fileParameters": {
             "ingestionParameters": {
-                "networkAccessMode": "public",
-                "identity": None,
-                "disableImageVerbalization": True,
                 "embeddingModel": {
                     "kind": "azureOpenAI",
                     "azureOpenAIParameters": embedding_parameters,
                 },
                 "contentExtractionMode": "minimal",
-                "ingestionSchedule": None,
             },
         },
     }
@@ -177,7 +166,7 @@ def smoke_test_payload(settings: BootstrapSettings) -> dict[str, Any]:
         "knowledgeSourceParams": [
             {
                 "knowledgeSourceName": settings.knowledge_source,
-                "kind": "azureBlob",
+                "kind": "file",
                 "includeReferences": True,
                 "includeReferenceSourceData": True,
             }
@@ -194,89 +183,90 @@ def _default_credential() -> Any:
     return DefaultAzureCredential()
 
 
-def _check_storage_network(settings: BootstrapSettings) -> None:
-    try:
-        completed = subprocess.run(
-            [
-                "az",
-                "storage",
-                "account",
-                "show",
-                "--ids",
-                settings.storage_resource_id,
-                "--query",
-                "{access:publicNetworkAccess,rules:networkRuleSet}",
-                "--output",
-                "json",
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=60,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise RuntimeError(f"Cannot check storage networking with Azure CLI: {exc}") from exc
-    if completed.returncode:
-        raise RuntimeError(f"Cannot check storage networking: {completed.stderr.strip()}")
-    try:
-        network = json.loads(completed.stdout)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError("Storage network check returned invalid JSON.") from exc
-    if not isinstance(network, dict):
-        raise RuntimeError("Storage network check returned a non-object response.")
-    if network.get("access") != "Enabled":
-        raise RuntimeError(
-            "Storage public network access is not Enabled. Codespace uploads cannot use "
-            "an IP allowlist while public access is disabled. Ask your administrator for "
-            "an approved lab-scoped policy exemption or run from an approved private "
-            "network with working private DNS. See docs/troubleshooting.md."
-        )
-    rules = network.get("rules")
-    if isinstance(rules, dict) and rules.get("defaultAction") == "Deny":
-        print(
-            "Storage uses selected networks. Ensure this runner's outbound IP is allowed; "
-            "the Search ingestion identity also needs an approved network path.",
-            file=sys.stderr,
-        )
+def _files_url(settings: BootstrapSettings) -> str:
+    return (
+        f"{settings.search_endpoint.rstrip('/')}/knowledgesources/"
+        f"{quote(settings.knowledge_source, safe='')}/files"
+        f"?api-version={quote(settings.api_version, safe='-')}"
+    )
 
 
-def _upload_documents(settings: BootstrapSettings, credential: Any) -> None:
-    try:
-        from azure.core.exceptions import HttpResponseError
-        from azure.storage.blob import BlobServiceClient, ContentSettings
-    except ImportError as exc:
-        raise RuntimeError("Install azure-storage-blob before provisioning Foundry IQ.") from exc
+def _list_files(settings: BootstrapSettings, token: str) -> dict[str, str]:
+    url = _files_url(settings)
+    files: dict[str, str] = {}
+    while url:
+        page = _request_json("GET", url, token)
+        entries = page.get("value")
+        if not isinstance(entries, list):
+            raise RuntimeError("Search file listing must contain a value array.")
+        for entry in entries:
+            if not isinstance(entry, dict):
+                raise RuntimeError("Search file listing contains an invalid entry.")
+            name, file_id = entry.get("fileName"), entry.get("fileId")
+            if not isinstance(name, str) or not isinstance(file_id, str) or not file_id:
+                raise RuntimeError("Search file listing is missing fileName or fileId.")
+            if name in files:
+                raise RuntimeError(
+                    f"Duplicate Search file name {name}; resolve it before retrying."
+                )
+            files[name] = file_id
+        next_url = page.get("@odata.nextLink")
+        if next_url and (
+            not isinstance(next_url, str)
+            or not next_url.startswith(settings.search_endpoint.rstrip("/") + "/")
+        ):
+            raise RuntimeError("Search returned an unexpected file continuation URL.")
+        url = next_url or ""
+    return files
+
+
+def _upload_documents(settings: BootstrapSettings, token: str) -> None:
     documents = sorted(settings.documents_path.glob("*.md"))
     if not documents:
         raise RuntimeError(f"No Foundry IQ documents found in {settings.documents_path}.")
-
-    service = BlobServiceClient(
-        account_url=f"https://{settings.storage_account}.blob.core.windows.net",
-        credential=credential,
-    )
-    container = service.get_container_client(settings.container)
+    files = _list_files(settings, token)
     for document in documents:
-        for attempt in range(1, 7):
-            try:
-                container.upload_blob(
-                    name=document.name,
-                    data=document.read_bytes(),
-                    overwrite=True,
-                    content_settings=ContentSettings(
-                        content_type="text/markdown",
-                        content_encoding="utf-8",
-                    ),
-                )
-                break
-            except HttpResponseError as exc:
-                if exc.status_code not in {403, 404, 409, 429} or attempt == 6:
-                    raise RuntimeError(
-                        f"Failed to upload {document.name}: {exc}. Check Storage Blob Data "
-                        "Contributor propagation and effective storage network rules, including "
-                        "Azure Policy. See docs/troubleshooting.md."
-                    ) from exc
-                time.sleep(10)
-    print(f"Uploaded {len(documents)} Foundry IQ knowledge documents.")
+        data = document.read_bytes()
+        file_id = files.get(document.name)
+        if file_id:
+            boundary = "travelbuddy-file-boundary"
+            data = (
+                (
+                    f"--{boundary}\r\n"
+                    'Content-Disposition: form-data; name="content"; '
+                    f'filename="{document.name}"\r\n'
+                    "Content-Type: application/octet-stream\r\n\r\n"
+                ).encode()
+                + data
+                + f"\r\n--{boundary}--\r\n".encode()
+            )
+            url = (
+                f"{settings.search_endpoint.rstrip('/')}/knowledgesources"
+                f"('{quote(settings.knowledge_source, safe='')}')/files"
+                f"('{quote(file_id, safe='')}')?api-version={settings.api_version}"
+            )
+            result = _request_json(
+                "PUT",
+                url,
+                token,
+                raw_data=data,
+                content_type=f"multipart/form-data; boundary={boundary}",
+                timeout_seconds=240,
+            )
+        else:
+            result = _request_json(
+                "POST",
+                _files_url(settings),
+                token,
+                raw_data=data,
+                content_type="application/octet-stream",
+                headers={"Content-Disposition": f'attachment; filename="{document.name}"'},
+                timeout_seconds=240,
+            )
+        if not isinstance(result.get("fileId"), str) or not result["fileId"]:
+            raise RuntimeError(f"Search did not confirm file processing for {document.name}.")
+        print(f"Processed Foundry IQ file: {document.name}")
+    print(f"Uploaded and indexed {len(documents)} Foundry IQ knowledge documents.")
 
 
 def _put_search_object(
@@ -291,39 +281,6 @@ def _put_search_object(
         f"?api-version={quote(settings.api_version, safe='-')}"
     )
     return _request_json("PUT", url, token, payload, allow_empty=True)
-
-
-def _wait_for_ingestion(
-    settings: BootstrapSettings,
-    token: str,
-    *,
-    timeout_seconds: int = 600,
-) -> None:
-    url = (
-        f"{settings.search_endpoint.rstrip('/')}/knowledgesources/"
-        f"{quote(settings.knowledge_source, safe='')}/status"
-        f"?api-version={quote(settings.api_version, safe='-')}"
-    )
-    deadline = time.monotonic() + timeout_seconds
-    while time.monotonic() < deadline:
-        status = _request_json("GET", url, token)
-        last = status.get("lastSynchronizationState")
-        current = status.get("currentSynchronizationState")
-        states = [state for state in (status, last, current) if isinstance(state, dict)]
-        if any(
-            state.get("errors")
-            or state.get("itemsUpdatesFailed")
-            or str(state.get("status", "")).casefold() in {"error", "failed"}
-            for state in states
-        ):
-            raise RuntimeError(f"Foundry IQ ingestion failed: {json.dumps(status)}")
-        completed_sync = isinstance(last, dict) and last.get("endTime") and current is None
-        legacy_complete = str(status.get("status", "")).casefold() in {"success", "completed"}
-        if completed_sync or legacy_complete:
-            print("Foundry IQ document ingestion completed.")
-            return
-        time.sleep(10)
-    raise RuntimeError(f"Foundry IQ ingestion did not complete within {timeout_seconds} seconds.")
 
 
 def _retrieve(
@@ -346,31 +303,41 @@ def _request_json(
     payload: Mapping[str, Any] | None = None,
     *,
     allow_empty: bool = False,
+    raw_data: bytes | None = None,
+    content_type: str = "application/json",
+    headers: Mapping[str, str] | None = None,
+    timeout_seconds: int = 90,
 ) -> Mapping[str, Any]:
-    data = None if payload is None else json.dumps(payload).encode("utf-8")
+    data = (
+        raw_data
+        if raw_data is not None
+        else (None if payload is None else json.dumps(payload).encode("utf-8"))
+    )
     request = Request(
         url,
         data=data,
         headers={
             "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
+            "Content-Type": content_type,
+            **(headers or {}),
         },
         method=method,
     )
     raw = ""
+    can_retry = method != "POST" or raw_data is None
     for attempt in range(1, 7):
         try:
-            with urlopen(request, timeout=90) as response:
+            with urlopen(request, timeout=timeout_seconds) as response:
                 raw = response.read().decode("utf-8")
             break
         except HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
-            retryable = exc.code in {403, 404, 409, 429, 500, 502, 503, 504}
+            retryable = can_retry and exc.code in {403, 404, 409, 429, 500, 502, 503, 504}
             if not retryable or attempt == 6:
                 raise RuntimeError(f"{method} {url} failed with HTTP {exc.code}: {detail}") from exc
             time.sleep(10)
         except URLError as exc:
-            if attempt == 6:
+            if not can_retry or attempt == 6:
                 raise RuntimeError(
                     f"{method} {url} could not reach Azure AI Search: {exc}"
                 ) from exc

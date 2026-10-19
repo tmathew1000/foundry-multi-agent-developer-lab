@@ -122,7 +122,7 @@ The deployment creates:
 * Chat and embedding model deployments
 * Hosted-agent runtime resources
 * Managed identities and required roles
-* Azure AI Search and Blob Storage for Foundry IQ
+* Azure AI Search with a direct file knowledge source (preview) for Foundry IQ
 * Six indexed destination knowledge documents
 * A reusable `travel-destinations` knowledge base
 * Scale-to-zero MCP hosting
@@ -131,6 +131,16 @@ The deployment creates:
 
 You will manually implement agent behavior, capability selection,
 orchestration, trace diagnosis, and evaluation-driven improvement.
+
+The knowledge hook uploads the six bundled Markdown files directly to Search.
+Each upload extracts, chunks, embeds, and indexes its content before returning.
+No dedicated Blob Storage account or indexer pipeline is required for knowledge
+ingestion. Rerunning provisioning updates existing files by ID rather than
+creating duplicates. Search and Foundry public endpoints must still be reachable.
+
+If you previously provisioned the Blob-based lab, follow the
+[upgrade steps](troubleshooting.md#upgrade-an-existing-blob-based-environment)
+before continuing with Module 2.
 
 Review the [architecture diagrams](architecture.md), then answer:
 
