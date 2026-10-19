@@ -10,7 +10,6 @@ keywords:
   - opentelemetry
 estimated_reading_time: 18
 ---
-
 ## Outcome
 
 You will deploy the completed workflow, follow its distributed trace, and use
@@ -38,6 +37,10 @@ Foundry IQ retrieval, and citation activity.
 
 ## Required: deploy the candidate
 
+In VS Code, select **Terminal → New Terminal**. Use the repository root (the
+directory containing `azure.yaml`) as the working directory for every command
+in this module. Use the same active `azd` environment you provisioned earlier.
+
 Run the complete local verification before deployment:
 
 ```bash
@@ -62,9 +65,10 @@ The Foundry project also needs a connection to that resource so you can view
 traces in the portal. Creating the resource and configuring telemetry export do
 not, by themselves, establish this portal connection.
 
-Find `AZURE_APPLICATION_INSIGHTS_NAME` in the `.env` file imported earlier in the
-lab. The resource name follows the pattern `appi-mcp-<resource token>`. Despite
-the `mcp` name, the hosted TravelBuddy application also exports telemetry to
+Find `AZURE_APPLICATION_INSIGHTS_NAME` in your active lab environment, using the
+`.env` file imported earlier in the lab. The resource name follows the pattern
+`appi-mcp-<resource token>`. Despite the `mcp` name, the hosted TravelBuddy
+application also exports telemetry to
 this resource. Use this existing resource rather than creating a second one.
 
 In the new Microsoft Foundry portal:
@@ -80,7 +84,8 @@ In the new Microsoft Foundry portal:
 If the **Connect** button is not visible, use **Manage → Project details →
 Connected resources → Add connection → Application Insights**, then select the
 same existing resource. If the project already has a connection, confirm that
-it points to the resource used by the application.
+it points to the resource named by `AZURE_APPLICATION_INSIGHTS_NAME` and used
+by the application. Do not create a duplicate resource.
 
 You need permission to add the project connection and query the selected
 Application Insights resource. If access is denied, ask your administrator for
@@ -97,29 +102,51 @@ for the portal connection procedure and access requirements.
 
 ## Required: generate a trace
 
-Invoke the deployed agent with:
+Open a VS Code terminal at the repository root (the directory containing
+`azure.yaml`), using the same active `azd` environment as your deployment.
+Invoke the deployed hosted agent:
 
-```text
-Plan four days in Tokyo from Lisbon. Keep the hotel under 200 EUR per night,
-include a day trip, and show major prices in JPY.
+<!-- markdownlint-disable MD013 -->
+
+```bash
+azd ai agent invoke travel-buddy 'Plan four days in Tokyo from Lisbon. Keep the hotel under 200 EUR per night, include a day trip, and show major prices in JPY.'
 ```
 
-Save the response ID printed by the invocation helper.
+<!-- markdownlint-enable MD013 -->
+
+This command targets the remote deployment in Microsoft Foundry. Do not add
+`--local`, call `localhost:8088`, or use a locally connected Agent Inspector to
+verify hosted-agent traces.
+
+Local Agent Inspector testing can export application telemetry when
+`APPLICATIONINSIGHTS_CONNECTION_STRING` and application instrumentation are
+configured. Those local traces do not, by themselves, prove that the deployed
+hosted agent is producing portal-visible traces.
+
+Save both the **Trace ID** and **Response ID** printed by the invocation.
+Use them to correlate this remote request with its portal trace.
 
 ## Required: inspect the trace
 
 In Microsoft Foundry:
 
-1. Open the project.
+1. Open the same Foundry project that hosts your deployed TravelBuddy agent.
 2. Open **Agents → Traces**.
-3. Filter to the TravelBuddy agent and recent time range.
-4. Open the trace matching the saved response ID.
+3. Select a recent time range that includes your invocation. If an agent filter
+   is available, use it to narrow the list to TravelBuddy.
+4. Use the saved Trace ID to locate the invocation where the portal exposes
+   trace identifiers. Open candidate traces and compare their timestamps,
+   request content, and available identifiers with your invocation.
+5. Check the saved Response ID in the trace details or span attributes when
+   exposed. Not every portal view supports searching or filtering by both IDs.
 
-If the invocation is not listed immediately, wait a few minutes and refresh.
+Allow a few minutes for telemetry ingestion before refreshing the trace list.
 Confirm that the time range includes the invocation and that the project is
 connected to the Application Insights resource selected above.
 
-Find:
+Look for the following execution details where exposed by the configured
+instrumentation and portal view. Not every item appears as a separate span,
+and retrieval or citation details may appear in attributes or tool results:
 
 * Hosted invocation
 * Agent Framework workflow
@@ -139,15 +166,29 @@ Record:
 * Whether an unnecessary specialist ran
 * Whether Foundry IQ ran only for destination knowledge
 * Which sources supported the destination recommendation
-* Token usage for the complete request
+* Token usage for the complete request, when available
+
+If an expected detail is missing, record the visibility gap rather than
+assuming the operation did not run.
 
 ## Required: diagnose the controlled failure
 
-Invoke:
+In the same VS Code terminal at the repository root, invoke the remote hosted
+agent:
 
-```text
-Convert my Tokyo hotel budget of 200 CAD per night to JPY.
+<!-- markdownlint-disable MD013 -->
+
+```bash
+azd ai agent invoke travel-buddy 'Convert my Tokyo hotel budget of 200 CAD per night to JPY.'
 ```
+
+<!-- markdownlint-enable MD013 -->
+
+Save this invocation's **Trace ID** and **Response ID** separately from the
+previous request. In the same Foundry project, open **Agents → Traces** and
+locate this invocation using the time range and available identifiers as
+described above. Allow a few minutes for ingestion, then inspect this
+invocation's tool spans.
 
 The starter currency tool intentionally supports a limited set of currencies.
 Use the trace to answer:
