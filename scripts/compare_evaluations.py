@@ -5,14 +5,13 @@ import json
 import sys
 from pathlib import Path
 
-from travel_buddy.cloud_evaluation import compare_metrics, load_result
+from travel_buddy.cloud_evaluation import compare_metrics, load_result, validate_comparison
 
 
-def _result_path(root: Path, label: str) -> Path:
-    generated = root / ".foundry" / "results" / f"{label}.json"
-    if generated.is_file():
-        return generated
-    return root / "artifacts" / "evaluations" / f"{label}.json"
+def _display_score(value: float | str | None, *, signed: bool = False) -> str:
+    if value is None:
+        return "unverified"
+    return format(float(value), "+.3f" if signed else ".3f")
 
 
 def main() -> int:
@@ -20,23 +19,29 @@ def main() -> int:
     parser.add_argument("baseline")
     parser.add_argument("candidate")
     parser.add_argument("--output", type=Path)
-    args = parser.parse_args()
     root = Path(__file__).parents[1]
+    parser.add_argument("--results-dir", type=Path, default=root / ".foundry" / "results")
+    parser.add_argument("--fallback", action="store_true")
+    args = parser.parse_args()
+    results_dir = root / "artifacts" / "evaluations" if args.fallback else args.results_dir
     try:
-        baseline = load_result(_result_path(root, args.baseline))
-        candidate = load_result(_result_path(root, args.candidate))
+        baseline = load_result(results_dir / f"{args.baseline}.json")
+        candidate = load_result(results_dir / f"{args.candidate}.json")
+        notice = validate_comparison(baseline, candidate)
         rows = compare_metrics(baseline, candidate)
     except Exception as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
+    print(notice)
+    print("Missing scores are unverified, not zero. Verify tool evidence in the actual traces.")
     print(f"{'Metric':24} {'Baseline':>10} {'Candidate':>10} {'Change':>10}")
     for row in rows:
         print(
             f"{row['metric'][:24]:24} "
-            f"{row['baseline']:10.3f} "
-            f"{row['candidate']:10.3f} "
-            f"{row['change']:+10.3f}"
+            f"{_display_score(row['baseline']):>10} "
+            f"{_display_score(row['candidate']):>10} "
+            f"{_display_score(row['change'], signed=True):>10}"
         )
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

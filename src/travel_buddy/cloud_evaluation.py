@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import math
 import os
 import time
 from collections.abc import Callable, Iterable, Mapping
@@ -13,6 +15,9 @@ from .evaluation import load_cases
 
 COMPARISON_LABELS = ("baseline", "candidate")
 TERMINAL_STATUSES = {"completed", "failed", "canceled"}
+MIN_EVALUATION_CASES = 6
+MAX_EVALUATION_CASES = 12
+INVOCATION_STATE_POLICY = "service-managed target completions; no conversation IDs supplied"
 
 
 class EvaluationConfigurationError(RuntimeError):
@@ -99,8 +104,13 @@ def build_testing_criteria(judge_model: str) -> list[dict[str, Any]]:
 
 def evaluation_rows(path: str | Path) -> list[dict[str, Any]]:
     cases = load_cases(path)
-    if not 6 <= len(cases) <= 10:
-        raise ValueError(f"Expected 6-10 evaluation rows, received {len(cases)}")
+    if not MIN_EVALUATION_CASES <= len(cases) <= MAX_EVALUATION_CASES:
+        raise ValueError(
+            f"Expected {MIN_EVALUATION_CASES}-{MAX_EVALUATION_CASES} evaluation rows, "
+            f"received {len(cases)}"
+        )
+    if len({case.case_id for case in cases}) != len(cases):
+        raise ValueError("Evaluation case IDs must be unique")
     return [
         {
             "case_id": case.case_id,
@@ -111,6 +121,100 @@ def evaluation_rows(path: str | Path) -> list[dict[str, Any]]:
         }
         for case in cases
     ]
+
+
+def build_provenance(
+    rows: list[dict[str, Any]],
+    config: HostedAgentEvaluationConfig,
+) -> dict[str, Any]:
+    return {
+        "dataset_sha256": _fingerprint(rows),
+        "requested_criteria_sha256": _fingerprint(build_testing_criteria(config.judge_model)),
+        "project_endpoint": config.project_endpoint,
+        "agent_name": config.agent_name,
+        "invocation_state_policy": INVOCATION_STATE_POLICY,
+    }
+
+
+def _fingerprint(value: Any) -> str:
+    encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def validate_candidate_inputs(
+    baseline: Mapping[str, Any],
+    provenance: Mapping[str, Any],
+    config: HostedAgentEvaluationConfig,
+) -> None:
+    previous = baseline.get("provenance")
+    if baseline.get("artifact_kind") == "fallback" or not isinstance(previous, Mapping):
+        raise ValueError(
+            "A live baseline with provenance is required; archive old results and rerun."
+        )
+    for key, value in provenance.items():
+        if previous.get(key) != value:
+            raise ValueError(
+                f"Baseline and candidate differ in {key}; do not compare different suites."
+            )
+    agent = baseline.get("agent")
+    if not isinstance(agent, Mapping) or agent.get("name") != config.agent_name:
+        raise ValueError("Baseline and candidate must target the same agent.")
+    if not agent.get("version") or str(agent["version"]) == config.agent_version:
+        raise ValueError("Deploy a distinct candidate agent version after capturing the baseline.")
+
+
+def validate_comparison(baseline: Mapping[str, Any], candidate: Mapping[str, Any]) -> str:
+    fallback = [item.get("artifact_kind") == "fallback" for item in (baseline, candidate)]
+    if any(fallback):
+        if not all(fallback):
+            raise ValueError("Do not mix illustrative fallback results with live results.")
+        return "Illustrative fallback comparison only; not evidence from your deployment."
+    required = (
+        "dataset_sha256",
+        "requested_criteria_sha256",
+        "actual_criteria_sha256",
+        "project_endpoint",
+        "agent_name",
+        "invocation_state_policy",
+    )
+    provenance = baseline.get("provenance")
+    other = candidate.get("provenance")
+    if not isinstance(provenance, Mapping) or not isinstance(other, Mapping):
+        raise ValueError("Live comparison requires provenance; archive old results and rerun both.")
+    for key in required:
+        if not provenance.get(key) or provenance[key] != other.get(key):
+            raise ValueError(f"Missing or mismatched comparison provenance: {key}")
+    first_agent = baseline.get("agent", {})
+    second_agent = candidate.get("agent", {})
+    if not isinstance(first_agent, Mapping) or not isinstance(second_agent, Mapping):
+        raise ValueError("Comparison requires recorded agent identities.")
+    versions = [item.get("version") for item in (first_agent, second_agent)]
+    if (
+        not all(versions)
+        or str(versions[0]) == str(versions[1])
+        or any(item.get("name") != provenance["agent_name"] for item in (first_agent, second_agent))
+    ):
+        raise ValueError("Comparison requires the same agent with two distinct recorded versions.")
+    first_eval = baseline.get("evaluation", {})
+    second_eval = candidate.get("evaluation", {})
+    if (
+        not isinstance(first_eval, Mapping)
+        or not isinstance(second_eval, Mapping)
+        or not first_eval.get("id")
+        or first_eval["id"] != second_eval.get("id")
+    ):
+        raise ValueError("Baseline and candidate must reuse the same evaluation definition.")
+    return (
+        "Live version comparison; tool execution and conversation isolation "
+        "need trace verification."
+    )
+
+
+def record_actual_criteria(provenance: dict[str, Any], definition: Any) -> None:
+    criteria = _get_value(definition, "testing_criteria")
+    if not isinstance(criteria, list) or not criteria:
+        raise ValueError("Evaluation definition did not return testing_criteria.")
+    provenance["actual_criteria_sha256"] = _fingerprint([_to_dict(item) for item in criteria])
 
 
 def poll_run(
@@ -137,7 +241,7 @@ def poll_run(
     return run
 
 
-def summarize_output_items(items: Iterable[Any]) -> dict[str, dict[str, float | int]]:
+def summarize_output_items(items: Iterable[Any]) -> dict[str, dict[str, float | int | None]]:
     accumulators: dict[str, dict[str, float | int]] = {}
     for item in items:
         for result in _get_value(item, "results", []):
@@ -149,19 +253,20 @@ def summarize_output_items(items: Iterable[Any]) -> dict[str, dict[str, float | 
                 {"count": 0, "score_total": 0.0, "score_count": 0, "passed": 0},
             )
             current["count"] = int(current["count"]) + 1
-            if isinstance(score, (int, float)):
+            if _numeric_score(score) is not None:
                 current["score_total"] = float(current["score_total"]) + float(score)
                 current["score_count"] = int(current["score_count"]) + 1
             if passed is True:
                 current["passed"] = int(current["passed"]) + 1
 
-    summary: dict[str, dict[str, float | int]] = {}
+    summary: dict[str, dict[str, float | int | None]] = {}
     for name, values in accumulators.items():
         count = int(values["count"])
         score_count = int(values["score_count"])
         summary[name] = {
             "count": count,
-            "average_score": (float(values["score_total"]) / score_count if score_count else 0.0),
+            "score_count": score_count,
+            "average_score": (float(values["score_total"]) / score_count if score_count else None),
             "pass_rate": float(values["passed"]) / count if count else 0.0,
         }
     return summary
@@ -173,6 +278,7 @@ def summarize_response_contract(
 ) -> dict[str, float | int]:
     expected = {str(row["case_id"]): row for row in rows}
     results = []
+    seen: set[str] = set()
     for item in items:
         payload = _to_dict(item)
         datasource = _get_value(payload, "datasource_item", {})
@@ -180,6 +286,9 @@ def summarize_response_contract(
         case_id = str(_get_value(datasource, "case_id", ""))
         if case_id not in expected:
             raise RuntimeError(f"Evaluation output has unknown case_id: {case_id!r}")
+        if case_id in seen:
+            raise RuntimeError(f"Evaluation output has duplicate case_id: {case_id!r}")
+        seen.add(case_id)
         sample = _get_value(payload, "sample", {})
         response = _get_value(sample, "output_text")
         if not isinstance(response, str):
@@ -233,7 +342,7 @@ def load_result(path: str | Path) -> dict[str, Any]:
 def compare_metrics(
     baseline: Mapping[str, Any],
     candidate: Mapping[str, Any],
-) -> list[dict[str, float | str]]:
+) -> list[dict[str, float | str | None]]:
     baseline_metrics = baseline.get("metrics", {})
     candidate_metrics = candidate.get("metrics", {})
     if not isinstance(baseline_metrics, Mapping) or not isinstance(candidate_metrics, Mapping):
@@ -250,17 +359,26 @@ def compare_metrics(
                 "metric": str(name),
                 "baseline": baseline_score,
                 "candidate": candidate_score,
-                "change": candidate_score - baseline_score,
+                "change": (
+                    candidate_score - baseline_score
+                    if candidate_score is not None and baseline_score is not None
+                    else None
+                ),
             }
         )
     return rows
 
 
-def _metric_score(value: Any) -> float:
+def _metric_score(value: Any) -> float | None:
     if not isinstance(value, Mapping):
-        return 0.0
-    score = value.get("average_score")
-    return float(score) if isinstance(score, (int, float)) else 0.0
+        return None
+    return _numeric_score(value.get("average_score"))
+
+
+def _numeric_score(score: Any) -> float | None:
+    if isinstance(score, (int, float)) and not isinstance(score, bool) and math.isfinite(score):
+        return float(score)
+    return None
 
 
 def _get_value(value: Any, name: str, default: Any = None) -> Any:

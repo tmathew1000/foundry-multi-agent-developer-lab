@@ -6,16 +6,14 @@ import sys
 import unittest
 from pathlib import Path
 
-from travel_buddy.evaluation import load_cases
+from travel_buddy.cloud_evaluation import evaluation_rows
 
 
 def run_all(root: Path) -> int:
     root = Path(__file__).parents[1]
     with (root / ".devcontainer" / "devcontainer.json").open(encoding="utf-8") as stream:
         json.load(stream)
-    cases = load_cases(root / "evaluations" / "travel_buddy_cases.jsonl")
-    if not 6 <= len(cases) <= 10:
-        raise RuntimeError("Evaluation dataset must contain between 6 and 10 cases")
+    evaluation_rows(root / "evaluations" / "travel_buddy_cases.jsonl")
     suite = unittest.defaultTestLoader.discover(str(root / "tests"))
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     return 0 if result.wasSuccessful() else 1

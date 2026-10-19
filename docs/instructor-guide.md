@@ -2,7 +2,7 @@
 title: Instructor guide
 description: Facilitation, timing, checkpoints, demonstrations, and recovery guidance
 author: tmathew1000
-ms.date: 2026-10-17
+ms.date: 2026-10-19
 ms.topic: reference
 keywords:
   - instructor
@@ -67,8 +67,8 @@ and retain old resources until the new retrieval path is verified.
 | 1:10 | Contrast capability types | Foundry IQ verified |
 | 1:50 | Explain manager-led orchestration | Activities registered |
 | 2:25 | Break | Multi-agent tests pass |
-| 2:35 | Demonstrate trace hierarchy | Candidate deployed |
-| 3:10 | Lead failure diagnosis | Failure explained from spans |
+| 2:35 | Demonstrate trace hierarchy | Baseline workflow deployed |
+| 3:10 | Lead diagnosis from evidence | Routing and tool status explained |
 | 3:30 | Explain evaluation comparison | Baseline and candidate compared |
 | 3:55 | Require cleanup | Resource deletion started |
 
@@ -108,11 +108,39 @@ convenient transportation, and a rainy-day activity. Cite the supporting
 sources.
 ```
 
-Controlled failure:
+Unsupported-currency diagnostic:
 
 ```text
 Convert my Tokyo hotel budget of 200 CAD per night to JPY.
 ```
+
+## Facilitating Modules 4 and 5
+
+Keep the published application and Module 1–3 checkpoints unchanged. Existing
+currency-routing instructions are part of the baseline, not a failure to
+reintroduce. Model-driven routing can still vary between runs.
+
+In Module 4, collect the invocation IDs, version, time, and actual trace
+evidence. Diagnose routing bypass separately from a tool's structured
+`unsupported_currency` result and from final-answer fidelity. Correct handling
+is a valid observation; do not ask students to rerun until a failure appears.
+The saved trace is an illustrative correct-handling example, not a live trace.
+Do not change instructions during diagnosis.
+
+In Module 5, run the fixed 12-case suite before editing instructions. Capture
+the exact baseline version, select a measured hypothesis, then deploy and
+evaluate a distinct candidate on identical cases and settings. The comparison
+helper checks recorded provenance, but manual trace review must establish
+actual tool execution and conversation isolation. Missing evidence remains
+unverified even if the response or an evaluator score looks good.
+
+If the baseline handles currency correctly, choose another observed issue.
+If no suitable issue appears or services are delayed, use Module 5's labeled
+supplied scenario and historical fallback scores for analysis only. Do not
+claim those scores measure the supplied narrative or the current suite.
+Unchanged or worse candidate results are valid discussion material. Keep the
+exercise to one focused instruction hypothesis and one candidate comparison;
+record what still requires live verification.
 
 ## Recovery policy
 

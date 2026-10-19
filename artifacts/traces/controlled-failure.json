@@ -3,7 +3,7 @@
   "scenario": "unsupported-currency",
   "trace_id": "00000000000000000000000000000001",
   "response_id": "resp_workshop_fallback",
-  "notice": "Fallback learning artifact. This is not telemetry from your deployment.",
+  "notice": "Illustrative offline example of correct unsupported-currency handling, not telemetry from your deployment or a guaranteed live execution path.",
   "spans": [
     {
       "span_id": "0000000000000001",

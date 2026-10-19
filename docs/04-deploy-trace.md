@@ -10,10 +10,11 @@ keywords:
   - opentelemetry
 estimated_reading_time: 18
 ---
+
 ## Outcome
 
 You will deploy the completed workflow, follow its distributed trace, and use
-evidence to diagnose a controlled tool failure.
+evidence to diagnose unsupported-currency handling and routing.
 
 Estimated time: 35 minutes.
 
@@ -35,7 +36,7 @@ flowchart TB
 Trace context connects the hosted request to Agent Framework, model, tool, MCP,
 Foundry IQ retrieval, and citation activity.
 
-## Required: deploy the candidate
+## Required: deploy the baseline workflow
 
 In VS Code, select **Terminal → New Terminal**. Use the repository root (the
 directory containing `azure.yaml`) as the working directory for every command
@@ -56,6 +57,8 @@ azd deploy
 
 Wait until the hosted-agent status reports ready. A deployment that was accepted
 but is still starting is not ready for invocation.
+This is the baseline for Module 5. Do not change routing instructions in
+Module 4; first collect evidence from the deployed version.
 
 ## Required: connect Application Insights to Foundry
 
@@ -68,15 +71,15 @@ not, by themselves, establish this portal connection.
 Find `AZURE_APPLICATION_INSIGHTS_NAME` in your active lab environment, using the
 `.env` file imported earlier in the lab. The resource name follows the pattern
 `appi-mcp-<resource token>`. Despite the `mcp` name, the hosted TravelBuddy
-application also exports telemetry to
-this resource. Use this existing resource rather than creating a second one.
+application also exports telemetry to this resource. Use this existing resource
+rather than creating a second one.
 
 In the new Microsoft Foundry portal:
 
 1. Open the same project that hosts your deployed TravelBuddy agent.
 2. In the left navigation, select **Agents**, then select **Traces** at the top.
 3. Select **Connect**.
-4. Choose the subscription and resource group containing the lab's Application
+4. Choose your own subscription and resource group containing the lab's Application
    Insights resource, then select the resource matching
    `AZURE_APPLICATION_INSIGHTS_NAME`.
 5. Select **Connect** and wait for the success confirmation.
@@ -109,7 +112,7 @@ Invoke the deployed hosted agent:
 <!-- markdownlint-disable MD013 -->
 
 ```bash
-azd ai agent invoke travel-buddy 'Plan four days in Tokyo from Lisbon. Keep the hotel under 200 EUR per night, include a day trip, and show major prices in JPY.'
+azd ai agent invoke travel-buddy --new-session --new-conversation 'Plan four days in Tokyo from Lisbon. Keep the hotel under 200 EUR per night, include a day trip, and show major prices in JPY.'
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -124,6 +127,7 @@ configured. Those local traces do not, by themselves, prove that the deployed
 hosted agent is producing portal-visible traces.
 
 Save both the **Trace ID** and **Response ID** printed by the invocation.
+Also record the invocation time and deployed agent version when available.
 Use them to correlate this remote request with its portal trace.
 
 ## Required: inspect the trace
@@ -134,6 +138,8 @@ In Microsoft Foundry:
 2. Open **Agents → Traces**.
 3. Select a recent time range that includes your invocation. If an agent filter
    is available, use it to narrow the list to TravelBuddy.
+   Agent filters and service-role labels may be missing or inconsistent;
+   do not rely on those labels alone.
 4. Use the saved Trace ID to locate the invocation where the portal exposes
    trace identifiers. Open candidate traces and compare their timestamps,
    request content, and available identifiers with your invocation.
@@ -143,6 +149,10 @@ In Microsoft Foundry:
 Allow a few minutes for telemetry ingestion before refreshing the trace list.
 Confirm that the time range includes the invocation and that the project is
 connected to the Application Insights resource selected above.
+Telemetry reaching Application Insights and appearing in a particular Foundry
+portal view are separate checks. If the portal view remains empty, verify
+ingestion in the connected resource before concluding that the agent emitted
+no telemetry. Portal layout and search options can vary by version.
 
 Look for the following execution details where exposed by the configured
 instrumentation and portal view. Not every item appears as a separate span,
@@ -171,13 +181,12 @@ Record:
 If an expected detail is missing, record the visibility gap rather than
 assuming the operation did not run.
 
-## Required: diagnose the controlled failure
+## Required: diagnose unsupported-currency handling
 
-This controlled failure targets the deployed Foundry-hosted agent, not a local
-Agent Inspector session. If you changed the routing instructions or restored a
-checkpoint after deployment, redeploy the updated code before hosted testing
-using the deployment steps above. Local code edits do not update the hosted
-agent.
+This diagnostic targets the deployed Foundry-hosted agent, not a local Agent
+Inspector session. Keep the baseline code unchanged. Local code edits do not
+update the hosted agent; instruction improvements and candidate deployment
+belong in Module 5.
 
 In a VS Code terminal at the repository root, invoke the remote hosted agent
 with a fresh session and conversation so earlier requests do not affect this
@@ -191,30 +200,42 @@ azd ai agent invoke travel-buddy --new-session --new-conversation 'Convert my To
 
 <!-- markdownlint-enable MD013 -->
 
-Save this invocation's **Trace ID** and **Response ID** separately from the
-previous request. In the same Foundry project, open **Agents → Traces** and
+Save this invocation's **Trace ID**, **Response ID**, invocation time, and
+agent version when available, separately from the previous request.
+In the same Foundry project, open **Agents → Traces** and
 locate this invocation using the time range and available identifiers as
 described above. Allow a few minutes for ingestion, then inspect this
 invocation's tool spans.
 
-The starter currency tool intentionally supports a limited set of currencies.
-The intended tool result has `status="unsupported_currency"`, with
+The workshop currency tool intentionally supports a limited set of currencies.
+When called with CAD, its result has `status="unsupported_currency"`, with
 `output_amount` and `rate` set to `null`. This is a structured limitation, not
 necessarily an exception or a failed CLI command.
 
-Inspect the actual trace for this execution sequence:
+Correct tool-backed handling has this execution sequence, followed by a final
+response that accurately preserves the limitation:
 
 ```text
 Coordinator → Flights → convert_currency → unsupported_currency
 ```
 
-Confirm that Flights called `convert_currency` with the requested amount and
-currency codes, and that the final response accurately reports the returned
-limitation without inventing a rate or numeric conversion. These steps may be
-nested spans or tool-result attributes rather than separate trace entries.
+Inspect what actually happened. You may observe:
+
+* Flights calls the tool and the answer preserves `unsupported_currency`.
+  This is correct handling of an intentional tool limitation.
+* Coordinator answers or asks for a rate without calling Flights/tool.
+  This is routing bypass, not proof that the tool rejected CAD.
+* The tool reports unsupported CAD, but the final answer substitutes an
+  estimate. This is a final-response fidelity failure.
+* Invocation, authentication, tool execution, or a service fails.
+  This is a separate operational failure to investigate.
+
+Tool calls may be nested spans and results may appear in attributes. Verify
+the requested amount and currency codes, returned status, and final response.
 A numeric estimate without a currency-tool call is a routing failure, not
-successful completion. If the necessary spans or results are not visible,
-record that the hosted behavior remains unverified.
+successful completion. If the necessary evidence is missing, mark tool execution
+as **unverified**, not successful. Do not rerun until a preferred failure
+appears; a correct baseline is valid evidence too.
 
 Use the trace to answer:
 
@@ -226,9 +247,9 @@ Use the trace to answer:
 
 The correct diagnosis is based on the tool span, not on the wording of the final
 answer alone. Static instruction tests do not prove live model routing.
-Prompt-based routing improvements are not deterministic guarantees; verify
-the behavior with a fresh hosted trace after redeployment before claiming the
-routing gap is fixed.
+Retain your trace evidence and diagnosis for Module 5; do not fix routing in
+this module. The repository already includes currency-routing guidance, but
+prompt-based routing is not a deterministic guarantee.
 
 ## Why this matters
 
@@ -254,7 +275,10 @@ trace to complete the learning outcome.
 ## Fallback artifact
 
 If trace ingestion is delayed, open `artifacts/traces/controlled-failure.json`.
-Follow the same diagnostic questions and return to the live trace if it appears.
+This illustrative offline example shows correct handling of an unsupported
+currency, with successful spans and a structured tool limitation. It is not
+evidence from your deployment or a guaranteed live path. Follow the same
+diagnostic questions and return to the live trace if it appears.
 
 ## Optional challenge
 
@@ -265,9 +289,10 @@ would reduce latency without reducing answer quality.
 
 Continue when:
 
-* The candidate version is deployed
+* The baseline workflow is deployed
 * The Foundry project is connected to the lab's Application Insights resource
 * You have followed one complete trace
-* You have diagnosed the unsupported-currency failure
+* You have diagnosed unsupported-currency handling or recorded missing evidence
+* You have retained your evidence for Module 5 without changing routing
 
 Next: [Module 5 - Evaluate and improve](05-evaluate-improve.md).

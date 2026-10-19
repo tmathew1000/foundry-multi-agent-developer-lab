@@ -103,6 +103,8 @@ def _contains(path: Path, text: str) -> bool:
 def _comparable(baseline: Path, candidate: Path) -> bool:
     if not baseline.is_file() or not candidate.is_file():
         return False
-    from .cloud_evaluation import compare_metrics, load_result
+    from .cloud_evaluation import compare_metrics, load_result, validate_comparison
 
-    return bool(compare_metrics(load_result(baseline), load_result(candidate)))
+    first, second = load_result(baseline), load_result(candidate)
+    print(validate_comparison(first, second))
+    return bool(compare_metrics(first, second))
