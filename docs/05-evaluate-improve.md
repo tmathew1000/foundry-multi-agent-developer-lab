@@ -111,6 +111,11 @@ azd env get-values > .env
 python scripts/run_evaluation.py --label baseline
 ```
 
+Module 2 persisted `TRAVEL_BUDDY_GROUNDING_PROVIDER` in the active `azd`
+environment, so this export retains the local Foundry IQ selection. Confirm
+it remains aligned with `azure.yaml`. Refreshing `.env` does not update a
+hosted version or override stale variables already set in your terminal.
+
 The helper targets the exact deployed agent name/version, verifies that version
 exists, and records it with the evaluation/run IDs, dataset/assertion hash,
 evaluator fingerprints, project, and invocation-state policy in
@@ -130,8 +135,9 @@ using `--version` to target each version.
 
 Results are not overwritten. Archive an existing baseline/candidate pair before
 starting a new experiment, or use the same new `--results-dir` for both runs
-and comparison. Old results without provenance require a fresh pair; never
-fabricate their missing metadata.
+and comparison, and pass it to module verification too. For example, use
+`--results-dir .foundry/results/experiment-2` on each command. Old results
+without provenance require a fresh pair; never fabricate their missing metadata.
 
 Open the evaluation result in Foundry and identify:
 
@@ -175,13 +181,18 @@ A good change:
 Run the offline tests:
 
 ```bash
-python -m pytest tests/test_tools.py tests/test_workflow.py tests/test_cloud_evaluation.py
+python -m pytest tests/test_agents.py tests/test_tools.py \
+  tests/test_workflow.py tests/test_cloud_evaluation.py
 ```
 
-These tests do not invoke models or prove live routing. The agent-specification
-tests also enforce baseline wording and checkpoint consistency. If your
-instruction experiment changes that wording, inspect failures honestly; do not
-weaken the existing contracts merely to make your candidate pass.
+In PowerShell, run the pytest command on one line without the Bash `\`.
+
+These tests do not invoke models or prove live routing. Agent-specification
+tests check capability ownership and baseline vocabulary independently in the
+application and checkpoints; candidate instructions need not equal checkpoint
+text. Vocabulary checks cannot establish instruction meaning. Preserve required
+currency guidance and review the candidate's meaning and actual traces manually.
+Do not edit checkpoints or weaken tests to make the candidate pass.
 
 ## Required: run and compare the candidate
 
@@ -252,8 +263,9 @@ Expected result:
 PASS Module 5: baseline and candidate results are comparable
 ```
 
-This checks result-file compatibility, not whether routing improved. When only
-fallback files are available, the verifier labels the comparison illustrative.
+This checks result-file compatibility, not whether routing improved. If you used
+a custom directory, append the same `--results-dir` argument. Missing live files
+fail verification; fallback files are never selected automatically.
 Do not mix a live result with a fallback result.
 
 ## Fallback artifact
@@ -270,7 +282,12 @@ currency-routing failure.
 
 ```bash
 python scripts/compare_evaluations.py baseline candidate --fallback
+python scripts/verify_module.py 5 --fallback
 ```
+
+The explicit fallback check labels the comparison illustrative and does not
+validate your deployment or the current suite. Do not combine `--fallback` with
+`--results-dir`.
 
 If no suitable live failure is observed, use this supplied-example task:
 an example Coordinator answered the CAD request with an estimated rate, while

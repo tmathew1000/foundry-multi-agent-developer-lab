@@ -14,6 +14,7 @@ from travel_buddy.cloud_evaluation import (
     load_result,
     validate_comparison,
 )
+from travel_buddy.verification import module_checks
 
 ROOT = Path(__file__).parents[1]
 RUN = runpy.run_path(str(ROOT / "scripts" / "run_evaluation.py"))["run"]
@@ -105,6 +106,7 @@ class EvaluationRunnerTests(unittest.TestCase):
             self.assertEqual(original, baseline_path.read_bytes())
             baseline, candidate = load_result(baseline_path), load_result(candidate_path)
             self.assertIn("Live", validate_comparison(baseline, candidate))
+            self.assertTrue(module_checks(ROOT, "5", results_dir=Path(folder))[0][1]())
             self.assertEqual("unverified", candidate["tool_execution_evidence"]["status"])
             self.assertEqual(12, len(candidate["tool_execution_evidence"]["case_ids"]))
             self.assertEqual(1, evals.create.call_count)

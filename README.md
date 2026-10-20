@@ -2,7 +2,7 @@
 title: Build, Observe, and Improve a Multi-Agent Solution with Microsoft Foundry
 description: Four-hour self-paced developer lab for Microsoft Foundry and Microsoft Agent Framework
 author: tmathew1000
-ms.date: 2026-10-17
+ms.date: 2026-10-19
 ms.topic: tutorial
 keywords:
   - microsoft foundry
@@ -18,12 +18,14 @@ estimated_reading_time: 6
 Build a four-agent travel-planning solution with Microsoft Agent Framework and
 Microsoft Foundry. You will add function and MCP tools, compare local grounding
 with a Foundry IQ knowledge base, deploy the workflow as a hosted agent, inspect
-its distributed traces, and compare evaluation results after an improvement.
+its distributed traces, and compare evaluation results after an instruction
+change.
 
 [![Validate lab](https://github.com/tmathew1000/foundry-multi-agent-developer-lab/actions/workflows/validate.yml/badge.svg)](https://github.com/tmathew1000/foundry-multi-agent-developer-lab/actions/workflows/validate.yml)
 
 > [!IMPORTANT]
-> This is a four-hour self-paced lab. Follow the required path in order. Optional
+> The four-hour instructional path assumes provisioning and readiness checks
+> are complete before class. Follow the required path in order. Optional
 > challenges do not block later modules.
 
 ## What you will accomplish
@@ -36,7 +38,7 @@ By the end of the lab, you will be able to:
 * Coordinate four logical agents with `GroupChatBuilder`
 * Expose the workflow as one hosted agent with `workflow.as_agent()`
 * Follow coordinator, specialist, model, and tool calls in a Foundry trace
-* Evaluate agent behavior and compare a baseline with an improved candidate
+* Evaluate agent behavior and compare a baseline with an instruction-change candidate
 * Use managed identity and environment-based configuration
 
 ## The solution you will build
@@ -82,9 +84,16 @@ Search, model, hosting, and role-assignment prerequisites still apply. See the
 
 ## Schedule
 
+The four-hour session assumes each participant has completed Module 0's
+provisioning, readiness checks, and live smoke test before class. Reserve a
+separate setup window: initial provisioning typically takes 25 to 35 minutes,
+plus authentication, checks, and any capacity or permission remediation.
+Provisioning is not guaranteed to finish within that estimate. A cold-start
+delivery takes longer than four hours; do not skip readiness gates to catch up.
+
 | Module | Activity | Time |
 | -------- | ---------- | -----: |
-| 0 | Orient, validate, and start provisioning | 15 minutes |
+| 0 | Orient and confirm pre-provisioned readiness | 15 minutes |
 | 1 | Explore and invoke the baseline agent | 30 minutes |
 | 2 | Add tools and managed knowledge | 40 minutes |
 | 3 | Build the four-agent workflow | 55 minutes |
@@ -97,7 +106,8 @@ Search, model, hosting, and role-assignment prerequisites still apply. See the
 
 1. Review the [prerequisites](docs/prerequisites.md).
 2. Open the repository in GitHub Codespaces.
-3. Begin [Module 0: Orientation and preflight](docs/00-orientation.md).
+3. Complete the setup sections in [Module 0: Orientation and preflight](docs/00-orientation.md)
+   before class; revisit its architecture and readiness review during the session.
 
 ## Core and optional paths
 

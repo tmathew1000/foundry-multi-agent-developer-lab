@@ -20,7 +20,7 @@ pacing and discussion but must not supply missing steps.
 
 Complete the lab from a new subscription path and verify:
 
-* Both supported regions
+* The selected region and an approved alternative with current service support
 * Default model availability and quota requirements
 * Codespace post-create setup
 * `azd up` and `azd down --purge`
@@ -52,7 +52,11 @@ retrieval citations for the
 Tokyo neighborhood, transit, and activity documents. Use Module 2's comparison
 prompt and `python scripts/smoke_test.py` for live integration evidence.
 
-Allow students to provision before the event when possible. If they have an older
+Require provisioning and the Module 0 readiness and smoke checks before the
+four-hour event. Initial provisioning typically takes 25 to 35 minutes, plus
+authentication, verification, and remediation. Provide a separate setup clinic;
+a cold-start session needs additional time, not weaker completion gates.
+If students have an older
 Blob-based environment, use the
 [upgrade checklist](troubleshooting.md#upgrade-an-existing-blob-based-environment)
 and retain old resources until the new retrieval path is verified.
@@ -61,16 +65,16 @@ and retain old resources until the new retrieval path is verified.
 
 | Time | Instructor action | Participant milestone |
 | ------ | ------------------- | ----------------------- |
-| 0:00 | Introduce outcomes and start preflight | Subscription validated |
-| 0:15 | Explain architecture while provisioning runs | `azd up` started |
-| 0:40 | Demonstrate source-to-hosting relationship | Baseline invoked |
-| 1:10 | Contrast capability types | Foundry IQ verified |
-| 1:50 | Explain manager-led orchestration | Activities registered |
-| 2:25 | Break | Multi-agent tests pass |
-| 2:35 | Demonstrate trace hierarchy | Baseline workflow deployed |
-| 3:10 | Lead diagnosis from evidence | Routing and tool status explained |
-| 3:30 | Explain evaluation comparison | Baseline and candidate compared |
-| 3:55 | Require cleanup | Resource deletion started |
+| Before class | Complete provisioning and smoke checks | Environment ready |
+| 0:00 | Module 0: architecture and readiness | Setup confirmed |
+| 0:15 | Module 1: source and local hosting | Baseline invoked by 0:45 |
+| 0:45 | Module 2: tools and managed retrieval | Comparisons recorded by 1:25 |
+| 1:25 | Module 3: manager-led orchestration | Workflow tests pass by 2:20 |
+| 2:20 | Break | Resume at 2:30 |
+| 2:30 | Module 4: deploy and diagnose traces | Evidence retained by 3:05 |
+| 3:05 | Module 5: baseline and candidate | Comparison or fallback by 3:45 |
+| 3:45 | Module 6: review and cleanup | Verify resource deletion |
+| 4:00 | Close session | Follow up on unfinished deletion |
 
 ## Talking points
 
@@ -142,6 +146,11 @@ Unchanged or worse candidate results are valid discussion material. Keep the
 exercise to one focused instruction hypothesis and one candidate comparison;
 record what still requires live verification.
 
+When verification uses custom evaluation directories, carry `--results-dir`
+through the runner, comparison, and Module 5/final verification commands. Use
+`--fallback` explicitly for historical artifacts; never present them as live.
+Do not restore Module 3 checkpoints over a student's Module 5 candidate.
+
 ## Recovery policy
 
 Use checkpoints when a participant has spent more than five minutes on source
@@ -184,7 +193,8 @@ A successful pilot should achieve:
 * At least 80 percent of participants reach trace inspection
 * At least 75 percent compare evaluation versions
 * Checkpoint recovery takes less than five minutes
-* The required path finishes within four hours
+* The pre-provisioned instructional path finishes within four hours
+* Resource deletion is confirmed, even when teardown outlasts the session
 
 Collect module-level feedback and note where participants pause, misread, or
 require help.

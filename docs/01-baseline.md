@@ -2,7 +2,7 @@
 title: Module 1 - Explore the baseline hosted agent
 description: Inspect, run, and verify a code-first Agent Framework hosted agent
 author: tmathew1000
-ms.date: 2026-10-18
+ms.date: 2026-10-19
 ms.topic: tutorial
 keywords:
   - hosted agent
@@ -64,8 +64,7 @@ lab to detect source errors before a deployment.
 Expected result:
 
 ```text
-........                                                                 [100%]
-8 passed in ...s
+... passed in ...s
 ```
 
 ## Required: run the baseline
@@ -75,6 +74,12 @@ After `azd up` completes, import the environment:
 ```bash
 azd env get-values > .env
 ```
+
+Run commands from a VS Code terminal at the repository root. Local configuration
+resolves `SERVICE_MCP_SERVER_URI` to its `/mcp` endpoint; an explicit
+`TRAVEL_BUDDY_MCP_URL` takes precedence. The initial grounding provider is `local`.
+Module 2 persists the Foundry IQ selection before later environment refreshes.
+These local settings do not change an already deployed hosted version.
 
 The deployment requirements use a regular package install (`.`), not an editable
 install. This keeps the hosted package importable after the remote build directory
@@ -161,7 +166,7 @@ python scripts/verify_module.py 1
 Expected result:
 
 ```text
-PASS Module 1: baseline agent contract is valid
+PASS Module 1: hosted-agent baseline is valid
 ```
 
 ## Recovery

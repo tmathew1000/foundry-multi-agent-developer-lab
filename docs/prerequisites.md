@@ -2,7 +2,7 @@
 title: Prerequisites and subscription checks
 description: Required skills, Azure permissions, quotas, policies, and workstation setup for the lab
 author: tmathew1000
-ms.date: 2026-10-18
+ms.date: 2026-10-19
 ms.topic: reference
 keywords:
   - prerequisites
@@ -148,7 +148,8 @@ See [file operation recovery](troubleshooting.md#direct-file-upload-fails) and t
 
 The automated setup creates a disposable environment that includes:
 
-* One resource group
+* A primary `azd` resource group
+* A separate Foundry resource group when created by synthesized infrastructure
 * One Microsoft Foundry project
 * One model deployment
 * One embedding deployment
@@ -161,7 +162,9 @@ The automated setup creates a disposable environment that includes:
 
 ## Cost assumption
 
-Plan for five hours of resource lifetime:
+Budget for actual resource lifetime, including pre-class setup and cleanup.
+A five-hour estimate applies only when setup occurs shortly before the four-hour
+session:
 
 * Expected cost: USD 5 to USD 10
 * Current Azure AI Search and model pricing must be checked before delivery
@@ -169,15 +172,17 @@ Plan for five hours of resource lifetime:
 
 Cost varies with model selection, token volume, region, retries, and evaluation
 runs.
+Provisioning a day early increases resource lifetime and can exceed this estimate,
+particularly for the non-scale-to-zero Search service. Check current pricing.
 
 ## Stop conditions
 
 Do not start the required Azure path when:
 
-* The preflight reports no model quota
+* Quota checks in the portal or deployment errors show insufficient model capacity
 * Your role cannot create role assignments
 * Azure Policy blocks a required resource
-* Neither supported region has capacity
+* No approved region supports the required services with available capacity
 * Your subscription is disabled or has no available credit
 
 Use the checkpoint and saved-artifact path instead. Do not spend lab time trying

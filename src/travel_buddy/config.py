@@ -10,6 +10,16 @@ class ConfigurationError(RuntimeError):
     pass
 
 
+def resolve_mcp_url(values: Mapping[str, str]) -> str | None:
+    explicit = values.get("TRAVEL_BUDDY_MCP_URL", "").strip()
+    if explicit:
+        return explicit
+    service_uri = values.get("SERVICE_MCP_SERVER_URI", "").strip().rstrip("/")
+    if not service_uri:
+        return None
+    return service_uri if service_uri.endswith("/mcp") else service_uri + "/mcp"
+
+
 def resolve_model_deployment(values: Mapping[str, str]) -> str | None:
     explicit_name = values.get("AZURE_AI_MODEL_DEPLOYMENT_NAME")
     if explicit_name and explicit_name.strip():
@@ -105,7 +115,7 @@ class TravelBuddySettings:
                 or values.get("AZURE_AIPROJECT_ENDPOINT")
             ),
             model_deployment=resolve_model_deployment(values),
-            mcp_url=values.get("TRAVEL_BUDDY_MCP_URL"),
+            mcp_url=resolve_mcp_url(values),
             app_insights_connection_string=values.get("APPLICATIONINSIGHTS_CONNECTION_STRING"),
             grounding=GroundingSettings(
                 provider=values.get("TRAVEL_BUDDY_GROUNDING_PROVIDER", "local"),

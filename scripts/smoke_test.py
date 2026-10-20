@@ -68,10 +68,9 @@ def main() -> int:
         settings.require_cloud()
 
         stage = "remote MCP"
-        mcp_url = values.get("TRAVEL_BUDDY_MCP_URL") or (
-            values["SERVICE_MCP_SERVER_URI"].rstrip("/") + "/mcp"
-        )
-        asyncio.run(asyncio.wait_for(check_mcp(mcp_url), timeout=90))
+        if not settings.mcp_url:
+            raise RuntimeError("Missing remote MCP endpoint.")
+        asyncio.run(asyncio.wait_for(check_mcp(settings.mcp_url), timeout=90))
         print("PASS live MCP tool call")
 
         stage = "Foundry IQ"

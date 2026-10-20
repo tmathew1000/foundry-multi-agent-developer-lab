@@ -12,6 +12,9 @@ from travel_buddy.verification import module_checks, normalize_module_identifier
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("module")
+    evidence = parser.add_mutually_exclusive_group()
+    evidence.add_argument("--results-dir", type=Path)
+    evidence.add_argument("--fallback", action="store_true")
     args = parser.parse_args()
     print("Configuration/static checks only; no live agent or tool calls are made.")
     root = Path(__file__).parents[1]
@@ -22,7 +25,7 @@ def main() -> int:
 
     failed = False
     for module in modules:
-        checks = module_checks(root, module)
+        checks = module_checks(root, module, results_dir=args.results_dir, fallback=args.fallback)
         if module == "0":
             checks.append(
                 (

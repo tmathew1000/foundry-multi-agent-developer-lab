@@ -1,8 +1,8 @@
 ---
 title: Module 0 - Orientation and preflight
-description: Validate the subscription, start provisioning, and understand the lab architecture
+description: Provision before class, confirm readiness, and understand the lab architecture
 author: tmathew1000
-ms.date: 2026-10-18
+ms.date: 2026-10-19
 ms.topic: tutorial
 keywords:
   - preflight
@@ -13,11 +13,18 @@ estimated_reading_time: 10
 
 ## Outcome
 
-You will validate your environment, start provisioning, and identify the
+You will validate your environment, complete provisioning, and identify the
 responsibility of every major solution component.
 
-Estimated time: 15 minutes of active work, plus 20 to 30 minutes for
-provisioning.
+Estimated class time: 15 minutes for architecture and readiness review with an
+already provisioned environment. Complete setup through the live smoke test
+before class. Initial provisioning typically takes 25 to 35 minutes, plus
+authentication, verification, and remediation time. A cold start extends the
+lab beyond four hours; capacity and permission delays can take longer.
+
+If setup is already complete, review the architecture and confirm your recorded
+readiness results. Do not create another environment or reprovision merely to
+repeat the in-class orientation.
 
 ## Architecture change
 
@@ -81,9 +88,9 @@ Expected result:
 ```
 
 > [!CAUTION]
-> Stop if quota, role assignment, policy, or subscription-state checks fail.
-> Follow the remediation printed by the script. Do not bypass organizational
-> controls.
+> Stop on blocking preflight results. Preflight does not query live quota or
+> prove permission to create role assignments. Resolve its caveats through the
+> prerequisite checks before provisioning. Do not bypass organizational controls.
 
 ## Required: start provisioning
 
@@ -102,9 +109,9 @@ azd up
 ```
 
 Provisioning may take 25 to 35 minutes because the initial run creates and
-indexes the Foundry IQ knowledge source. Continue with the architecture review
-while the command runs. If `azd up` requires your terminal, open a second
-terminal for the next section.
+indexes the Foundry IQ knowledge source. Do this before class. You can review
+the architecture while the command runs. If `azd up` requires your terminal,
+open a second terminal for the next section.
 
 > [!IMPORTANT]
 > Wait for `azd up` to report that provisioning and deployment succeeded before
@@ -183,6 +190,10 @@ python scripts/smoke_test.py
 This invokes deployed services and can incur model charges. A successful
 deployment or static check alone does not prove the agent can answer.
 
+The smoke test checks MCP and Search independently and obtains a hosted answer.
+It does not prove that the hosted agent selected those integrations for that
+answer. Modules 4-5 require trace evidence for execution behavior.
+
 ## Troubleshooting
 
 If Azure authentication expires, repeat both sign-in commands.
@@ -239,5 +250,9 @@ Continue when:
 * Module 0 verification passes
 * The live smoke test returns an agent answer
 * You can explain Foundry, Foundry IQ, and Agent Framework responsibilities
+
+On the saved-artifact path, mark unavailable deployment and smoke-test evidence
+unverified rather than claiming these gates passed. Complete offline exercises
+and the labeled fallback analysis; this is not live hosted-agent completion.
 
 Next: [Module 1 - Explore the baseline hosted agent](01-baseline.md).

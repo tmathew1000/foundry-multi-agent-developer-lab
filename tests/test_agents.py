@@ -1,39 +1,53 @@
 import runpy
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
-from travel_buddy.agents import coordinator_spec, specialist_specs
+from travel_buddy.agents import AgentSpec, coordinator_spec, specialist_specs
 from travel_buddy.checkpointing import restore_plan, start_plan
-from travel_buddy.tools import convert_currency, search_flights
+from travel_buddy.tools import convert_currency, estimate_trip_total, search_flights
 
 
 class AgentSpecificationTests(unittest.TestCase):
     """Static specification contracts, not proof of live model routing."""
 
     def test_coordinator_requires_tool_backed_currency_delegation(self) -> None:
-        instructions = coordinator_spec().instructions
+        self.assert_currency_contracts(coordinator_spec(), specialist_specs()[0])
 
-        self.assertIn("Delegate all requested currency conversions to Flights", instructions)
-        self.assertIn("standalone conversions and hotel-budget conversions", instructions)
-        self.assertIn(
-            "Do not terminate or answer a conversion request before Flights", instructions
-        )
-        self.assertIn("Never invent exchange rates or substitute estimates", instructions)
-        self.assertIn("unsupported_currency", instructions)
-        self.assertIn("without a numeric conversion", instructions)
+    def assert_currency_contracts(self, coordinator: AgentSpec, flights: AgentSpec) -> None:
+        # Vocabulary checks flag omissions, not instruction meaning or live routing.
+        for term in (
+            "Flights",
+            "convert_currency",
+            "standalone",
+            "hotel-budget",
+            "unsupported_currency",
+            "exchange rates",
+            "limitation",
+        ):
+            self.assertIn(term.casefold(), coordinator.instructions.casefold())
+        for term in ("currency", "standalone", "hotel-budget", "convert_currency"):
+            self.assertIn(term, flights.description.casefold())
+        for term in (
+            "convert_currency",
+            "standalone",
+            "hotel-budget",
+            "unsupported_currency",
+            "unsupported",
+            "limitation",
+            "estimated rate",
+        ):
+            self.assertIn(term, flights.instructions.casefold())
+        self.assertEqual("Coordinator", coordinator.name)
+        self.assertEqual("Flights", flights.name)
+        self.assertEqual((search_flights, convert_currency), flights.tools)
+        self.assertEqual((estimate_trip_total,), coordinator.tools)
 
     def test_flights_advertises_and_requires_currency_conversion(self) -> None:
         flights, hotels, activities = specialist_specs()
 
         self.assertIn("flight options", flights.description)
         self.assertIn("currency conversions", flights.description)
-        self.assertIn("standalone and hotel-budget", flights.description)
-        self.assertIn(
-            "Call convert_currency for every currency conversion request", flights.instructions
-        )
-        self.assertIn("even if a currency may be unsupported", flights.instructions)
-        self.assertIn("unsupported_currency", flights.instructions)
-        self.assertIn("without a numeric conversion or estimated rate", flights.instructions)
         self.assertEqual((search_flights, convert_currency), flights.tools)
         self.assertNotIn(convert_currency, coordinator_spec().tools)
         self.assertNotIn(convert_currency, hotels.tools)
@@ -52,14 +66,52 @@ class AgentSpecificationTests(unittest.TestCase):
                 )
                 checkpoint_coordinator = namespace["coordinator_spec"]()
                 checkpoint_flights = namespace["specialist_specs"]()[0]
-                for expected, actual in (
-                    (coordinator_spec(), checkpoint_coordinator),
-                    (specialist_specs()[0], checkpoint_flights),
-                ):
-                    self.assertEqual(expected.name, actual.name)
-                    self.assertEqual(expected.description, actual.description)
-                    self.assertEqual(expected.instructions, actual.instructions)
-                    self.assertEqual(expected.tools, actual.tools)
+                self.assert_currency_contracts(checkpoint_coordinator, checkpoint_flights)
+                self.assertIn(
+                    "Delegate all requested currency conversions to Flights",
+                    checkpoint_coordinator.instructions,
+                )
+                self.assertIn(
+                    "Do not terminate or answer a conversion request before Flights",
+                    checkpoint_coordinator.instructions,
+                )
+                self.assertIn(
+                    "Never invent exchange rates or substitute estimates",
+                    checkpoint_coordinator.instructions,
+                )
+                self.assertIn(
+                    "Call convert_currency for every currency conversion request",
+                    checkpoint_flights.instructions,
+                )
+                self.assertIn(
+                    "even if a currency may be unsupported", checkpoint_flights.instructions
+                )
+                self.assertIn(
+                    "without a numeric conversion or estimated rate",
+                    checkpoint_flights.instructions,
+                )
+
+    def test_instruction_experiment_need_not_match_checkpoints(self) -> None:
+        coordinator = coordinator_spec()
+        candidate = replace(
+            coordinator,
+            description="Coordinates relevant travel specialists.",
+            instructions=coordinator.instructions.replace(
+                "Coordinate Flights, Hotels, and Activities.",
+                "Coordinate relevant Flights, Hotels, and Activities work.",
+            )
+            + " Avoid unnecessary specialist calls.",
+        )
+        self.assert_currency_contracts(candidate, specialist_specs()[0])
+
+    def test_currency_contract_detects_missing_tool_and_guidance(self) -> None:
+        flights = specialist_specs()[0]
+        for candidate in (
+            replace(flights, tools=(search_flights,)),
+            replace(flights, instructions="Answer currency questions."),
+        ):
+            with self.subTest(candidate=candidate), self.assertRaises(AssertionError):
+                self.assert_currency_contracts(coordinator_spec(), candidate)
 
     def test_mcp_is_scoped_to_hotels_and_activities(self) -> None:
         grounding = object()

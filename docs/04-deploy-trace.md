@@ -60,6 +60,11 @@ but is still starting is not ready for invocation.
 This is the baseline for Module 5. Do not change routing instructions in
 Module 4; first collect evidence from the deployed version.
 
+Before deploying, confirm that the Foundry IQ provider selected in Module 2
+remains set in `azure.yaml`. Local `.env` values configure local runs, not the
+hosted service. Module 5 refreshes deployment metadata and records this baseline
+before any candidate instruction change.
+
 ## Required: connect Application Insights to Foundry
 
 The lab provisions an Application Insights resource and configures the hosted

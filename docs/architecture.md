@@ -2,7 +2,7 @@
 title: TravelBuddy architecture
 description: Readable architecture diagrams for the Foundry and Agent Framework lab
 author: tmathew1000
-ms.date: 2026-10-17
+ms.date: 2026-10-19
 ms.topic: concept
 keywords:
   - architecture
@@ -82,10 +82,14 @@ complete graph as one deployment.
 
 | Agent | Responsibility | Capabilities |
 | ------- | ---------------- | -------------- |
-| Coordinator | Route and synthesize | Routing and termination |
-| Flights | Flights, timing, weather, and currency | Python function tools |
-| Hotels | Lodging areas, budgets, and trade-offs | MCP and Foundry IQ |
+| Coordinator | Route and synthesize | Routing and trip totals |
+| Flights | Flight options and currency | Python function tools |
+| Hotels | Lodging areas and budgets | Function tool, MCP, Foundry IQ |
 | Activities | Experiences and day-by-day plans | MCP and Foundry IQ |
+
+Coordinator owns `estimate_trip_total`. Flights owns `search_flights` and
+`convert_currency`; Hotels owns `search_hotels` in addition to MCP and grounding.
+There is no weather tool in the lab.
 
 The division is intentionally visible so you can reason about routing and inspect
 each specialist in a trace.
@@ -146,5 +150,7 @@ flowchart LR
     R2 --> CMP[Compare results]
 ```
 
-The lab ends with a measured improvement. It does not rely on subjective prompt
-testing alone.
+The lab ends with a measured comparison, or explicitly labeled supplied-example
+analysis when live evaluation is unavailable. An unchanged or worse candidate is
+valid evidence. Instruction changes do not guarantee routing improvement, and
+response checks do not replace actual tool-execution traces.

@@ -2,7 +2,7 @@
 title: Troubleshooting
 description: Symptom-based recovery for setup, Foundry IQ, MCP, tracing, and evaluation
 author: tmathew1000
-ms.date: 2026-10-18
+ms.date: 2026-10-19
 ms.topic: troubleshooting
 keywords:
   - troubleshooting
@@ -111,6 +111,31 @@ azd up
 
 Deleting a deployment record does not delete its resources. Do not use this as
 a replacement for resource cleanup.
+
+## Local capabilities differ from the hosted agent
+
+Run local commands from the repository root. Import deployment outputs with
+`azd env get-values > .env`, then restart `python main.py`. The local application
+derives `/mcp` from `SERVICE_MCP_SERVER_URI` unless `TRAVEL_BUDDY_MCP_URL` is
+explicitly set. Remove a stale terminal override before testing a changed value.
+
+For Foundry IQ, keep the hosted `azure.yaml` setting and the active `azd`
+environment aligned. Module 2 uses
+`azd env set TRAVEL_BUDDY_GROUNDING_PROVIDER foundry_iq` before exporting `.env`.
+A value added only to `.env` is lost on the next export. The provider defaults
+to `local`; provisioned Search resources alone do not enable it. Local restarts
+do not update hosted code or configuration; redeployment is required.
+
+The smoke test checks service connectivity independently. Inspect the actual
+invocation trace to prove an agent used MCP or Foundry IQ.
+
+## Evaluation verification cannot find results
+
+Use the same `--results-dir` for baseline, candidate, comparison, and
+`verify_module.py 5` (or `all`). The verifier prints the selected paths and fails
+when either result is missing. It never automatically substitutes historical
+artifacts. For offline analysis, explicitly select `--fallback` instead, and
+record that the comparison is illustrative, not a live deployment measurement.
 
 ## Hosted agent is not ready
 

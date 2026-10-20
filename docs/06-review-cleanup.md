@@ -2,7 +2,7 @@
 title: Module 6 - Review and clean up
 description: Confirm the learning outcomes and remove all disposable Azure resources
 author: tmathew1000
-ms.date: 2026-10-18
+ms.date: 2026-10-19
 ms.topic: tutorial
 keywords:
   - cleanup
@@ -53,6 +53,14 @@ Module 6 has no numbered script check and never deletes resources automatically.
 The separate smoke test calls live MCP, Search, and the hosted agent; it can
 incur model charges. Use trace and evaluation evidence for behavior beyond
 service reachability.
+
+If Module 5 used a custom experiment directory, pass the same `--results-dir`
+to `verify_module.py all`. If you used illustrative evaluation artifacts,
+select `python scripts/verify_module.py all --fallback` instead and label that
+part of verification offline. This flag changes only the evaluation-file
+selection; Module 0 still requires deployed configuration. If Azure is
+unavailable, run the offline tests and numbered static checks for Modules 1-4,
+skip the live smoke test, and record the remaining checks as unverified.
 
 ## Required: explain the solution
 
@@ -149,5 +157,8 @@ Explore these topics after the lab:
 
 ## Lab complete
 
-You have built, hosted, traced, evaluated, and improved a multi-agent solution
-with Microsoft Foundry and Microsoft Agent Framework.
+You have explored multi-agent construction, hosting, tracing, and an
+evidence-based evaluation loop with Microsoft Foundry and Microsoft Agent
+Framework. Record which outcomes you verified live and which used supplied
+examples. A candidate that is unchanged or worse is a valid measured result,
+not a reason to claim improvement.

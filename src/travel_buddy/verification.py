@@ -15,12 +15,22 @@ def normalize_module_identifier(identifier: str) -> tuple[str, ...]:
     return (normalized,)
 
 
-def module_checks(root: Path, module: str) -> list[tuple[str, Callable[[], bool]]]:
-    def result_file(label: str) -> Path:
-        generated = root / ".foundry" / "results" / f"{label}.json"
-        if generated.is_file():
-            return generated
-        return root / "artifacts" / "evaluations" / f"{label}.json"
+def module_checks(
+    root: Path,
+    module: str,
+    *,
+    results_dir: Path | None = None,
+    fallback: bool = False,
+) -> list[tuple[str, Callable[[], bool]]]:
+    if fallback and results_dir is not None:
+        raise ValueError("Choose --results-dir or --fallback, not both.")
+    selected_results = (
+        root / "artifacts" / "evaluations"
+        if fallback
+        else results_dir
+        if results_dir is not None
+        else root / ".foundry" / "results"
+    )
 
     checks: dict[str, list[tuple[str, Callable[[], bool]]]] = {
         "0": [
@@ -61,15 +71,15 @@ def module_checks(root: Path, module: str) -> list[tuple[str, Callable[[], bool]
                 lambda: _contains(root / "src/travel_buddy/agents.py", 'name="Coordinator"'),
             ),
             (
-                "FlightsSpecialist registered",
+                "Flights registered",
                 lambda: _contains(root / "src/travel_buddy/agents.py", 'name="Flights"'),
             ),
             (
-                "HotelsSpecialist registered",
+                "Hotels registered",
                 lambda: _contains(root / "src/travel_buddy/agents.py", 'name="Hotels"'),
             ),
             (
-                "ActivitiesSpecialist registered",
+                "Activities registered",
                 lambda: _contains(root / "src/travel_buddy/agents.py", 'name="Activities"'),
             ),
             (
@@ -89,7 +99,9 @@ def module_checks(root: Path, module: str) -> list[tuple[str, Callable[[], bool]
         "5": [
             (
                 "baseline and candidate results are comparable",
-                lambda: _comparable(result_file("baseline"), result_file("candidate")),
+                lambda: _comparable(
+                    selected_results / "baseline.json", selected_results / "candidate.json"
+                ),
             ),
         ],
     }
@@ -101,10 +113,16 @@ def _contains(path: Path, text: str) -> bool:
 
 
 def _comparable(baseline: Path, candidate: Path) -> bool:
+    print(f"Evaluation results: {baseline} and {candidate}")
     if not baseline.is_file() or not candidate.is_file():
+        print("Missing evaluation results; run the experiment or explicitly select --fallback.")
         return False
     from .cloud_evaluation import compare_metrics, load_result, validate_comparison
 
-    first, second = load_result(baseline), load_result(candidate)
-    print(validate_comparison(first, second))
-    return bool(compare_metrics(first, second))
+    try:
+        first, second = load_result(baseline), load_result(candidate)
+        print(validate_comparison(first, second))
+        return bool(compare_metrics(first, second))
+    except (OSError, ValueError) as exc:
+        print(f"Invalid evaluation comparison: {exc}")
+        return False

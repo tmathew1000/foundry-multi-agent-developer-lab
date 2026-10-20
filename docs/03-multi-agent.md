@@ -2,7 +2,7 @@
 title: Module 3 - Build the multi-agent workflow
 description: Complete the Activities specialist and orchestrate four logical agents
 author: tmathew1000
-ms.date: 2026-09-30
+ms.date: 2026-10-19
 ms.topic: tutorial
 keywords:
   - groupchatbuilder
@@ -49,8 +49,8 @@ Open `src/travel_buddy/agents.py` and `src/travel_buddy/workflow.py`.
 
 Review the existing roles:
 
-* Coordinator routes and synthesizes but owns no business tool.
-* Flights specialist owns deterministic flight-related function tools.
+* Coordinator routes, synthesizes, and owns `estimate_trip_total`.
+* Flights specialist owns flight search and currency conversion function tools.
 * Hotels specialist owns lodging MCP access and destination grounding.
 
 The specialist descriptions are part of the routing signal. Keep them short and
@@ -60,12 +60,11 @@ distinct.
 
 Locate the Activities TODO and create an `AgentSpec` with:
 
-* Name `ActivitiesSpecialist`
+* Name `Activities`
 * A concise routing description
 * Instructions limited to experiences, day trips, and itineraries
 * Activity MCP capability
 * Destination grounding provider
-* Stateless model options used by the other specialists
 
 Do not give it flight-specific tools.
 
@@ -85,7 +84,7 @@ Add the Activities specialist to the participants passed to
 Build the workflow and return:
 
 ```python
-workflow.as_agent()
+workflow.as_agent(name="TravelBuddy")
 ```
 
 The hosted runtime sees one agent endpoint even though Agent Framework runs four
@@ -99,7 +98,11 @@ Run:
 python -m pytest tests/test_workflow.py
 ```
 
-Then invoke these prompts:
+From a VS Code terminal at the repository root, run `python main.py` and leave
+it running. From a second terminal use the
+[Module 1 local Responses request or Agent Inspector](01-baseline.md#required-run-the-baseline),
+replacing the input with each prompt below. Do not invoke the remote deployment
+to test these source edits: Module 4 deploys the completed workflow.
 
 ```text
 Convert 500 USD to JPY for my Tokyo trip.
@@ -110,11 +113,15 @@ Plan a four-day Tokyo trip from Lisbon with a hotel near evening dining and one
 day trip.
 ```
 
-Expected behavior:
+Intended behavior to inspect:
 
 * The focused currency request does not require all specialists.
 * The complete request routes to Flights, Hotels, and Activities.
 * The coordinator returns one consolidated response.
+
+The tests check construction and contracts, not live model routing. Record
+unexpected specialist selection for later trace diagnosis.
+Stop the local host with `Ctrl+C` when finished.
 
 ## Understand the orchestration trade-off
 
@@ -134,9 +141,9 @@ Expected result:
 
 ```text
 PASS Coordinator registered
-PASS FlightsSpecialist registered
-PASS HotelsSpecialist registered
-PASS ActivitiesSpecialist registered
+PASS Flights registered
+PASS Hotels registered
+PASS Activities registered
 PASS Workflow exposed as an agent
 ```
 
@@ -150,8 +157,9 @@ Rerun the focused agent and orchestration tests after restoration.
 
 ## Optional challenge
 
-Add a test asserting that a lodging-only request does not need the Flights
-specialist. Do not change the required routing policy.
+Review the existing hotel-only evaluation case and explain why it should not
+need Flights unless currency conversion is requested. An expected-agent label
+is not proof of actual routing; use trace evidence when available.
 
 ## Completion check
 

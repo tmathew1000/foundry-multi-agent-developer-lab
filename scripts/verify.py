@@ -23,9 +23,7 @@ def main() -> int:
     root = Path(__file__).parents[1]
     if len(sys.argv) == 1:
         return run_all(root)
-    if len(sys.argv) != 2:
-        raise SystemExit("usage: verify.py [0|1|2|3|4|5|all]")
-    command = [sys.executable, str(root / "scripts" / "verify_module.py"), sys.argv[1]]
+    command = [sys.executable, str(root / "scripts" / "verify_module.py"), *sys.argv[1:]]
     completed = subprocess.run(command, cwd=root, check=False)
     return completed.returncode
 

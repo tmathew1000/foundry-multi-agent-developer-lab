@@ -2,7 +2,7 @@
 title: Module 2 - Add tools and managed knowledge
 description: Extend TravelBuddy with a Python function, remote MCP, and Foundry IQ
 author: tmathew1000
-ms.date: 2026-10-17
+ms.date: 2026-10-19
 ms.topic: tutorial
 keywords:
   - function tools
@@ -18,6 +18,9 @@ You will implement a function tool, inspect an MCP operation, and upgrade local
 destination grounding to a shared Foundry IQ knowledge base.
 
 Estimated time: 40 minutes.
+
+Run commands in VS Code terminals at the repository root. All prompt comparisons
+in this module target your local host, not the existing remote deployment.
 
 ## Architecture change
 
@@ -111,7 +114,15 @@ records. Open `src/travel_buddy/grounding.py` and find the token-overlap ranking
 Notice that the provider loads one local file, constructs citation IDs itself,
 and does not plan searches across documents.
 
-Run the baseline prompt:
+Module 1 stopped the local host. Start it again after completing the tool:
+
+```bash
+python main.py
+```
+
+Leave that terminal running. Use the
+[Module 1 local Responses request or Agent Inspector connection](01-baseline.md#required-run-the-baseline)
+from a second terminal, replacing its input with:
 
 ```text
 Recommend a Tokyo area with evening dining.
@@ -148,7 +159,8 @@ azd provision knowledge --no-state
 azd env get-values > .env
 ```
 
-The hook updates the six current documents. It does not delete remote files when
+The hook processes all Markdown files in `data/foundry-iq/`, including added
+documents. It does not delete remote files when
 you remove or rename a local file. Keep the bundled filenames for the required
 lab; review and delete obsolete files explicitly for optional experiments.
 See [file operation recovery](troubleshooting.md#direct-file-upload-fails)
@@ -179,19 +191,21 @@ to:
 TRAVEL_BUDDY_GROUNDING_PROVIDER: foundry_iq
 ```
 
-Refresh `.env` from the deployed environment:
+Persist the same selection in your active `azd` environment, then refresh `.env`:
 
 ```bash
+azd env set TRAVEL_BUDDY_GROUNDING_PROVIDER foundry_iq
 azd env get-values > .env
 ```
 
-Add this line to `.env` for the local comparison:
+Do not add this value only to `.env`: later exports replace that file. Keep the
+`azure.yaml` service setting and the persisted `azd` value aligned. The former
+configures the next hosted deployment; the latter survives exports for local
+testing. Neither changes the currently deployed version. If your terminal has an
+older provider variable set, clear it or open a fresh terminal before restarting.
 
-```text
-TRAVEL_BUDDY_GROUNDING_PROVIDER=foundry_iq
-```
-
-Restart the local host, then send:
+Stop the local host with `Ctrl+C`, run `python main.py` again, and use the same
+local Responses request or Inspector connection to send:
 
 ```text
 Recommend a Tokyo neighborhood under 200 EUR per night with evening dining,
@@ -216,13 +230,18 @@ I have a hotel budget of 200 EUR per night for Tokyo. Convert it to JPY,
 recommend an area with evening dining, and include a rainy-day activity.
 ```
 
-Expected behavior:
+Intended behavior to check in the local execution evidence:
 
 * The currency function is called.
 * The lodging operation is selected when appropriate.
 * Destination guidance combines Foundry IQ sources.
 * The answer retains retrieval citations.
 * The answer labels workshop or mock data clearly.
+
+Model routing can vary. A plausible answer does not prove tool execution or
+retrieval; record missing evidence or routing bypass rather than assuming success.
+Local testing can export telemetry when configured, but does not establish
+portal-visible hosted-agent tracing. Module 4 verifies that separately.
 
 ## Why this matters
 
@@ -253,8 +272,8 @@ module.
 
 ## Optional challenge
 
-Add a destination document, rerun `azd provision`, and verify that Foundry IQ
-can answer a question that depends on the new content.
+Add a destination document, rerun `azd provision knowledge --no-state`, and
+verify that Foundry IQ can answer a question that depends on the new content.
 
 ## Completion check
 
@@ -265,5 +284,7 @@ Continue when:
 * You have compared local and managed retrieval
 * You have observed citations from more than one destination document
 * You have observed at least one tool call
+
+Stop the local host with `Ctrl+C` before Module 3 changes the workflow source.
 
 Next: [Module 3 - Build the multi-agent workflow](03-multi-agent.md).
